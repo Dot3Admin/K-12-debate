@@ -1,0 +1,70 @@
+{
+  "list": {
+    "title": "エージェント一覧",
+    "search": "エージェント検索",
+    "searchPlaceholder": "エージェント名または説明で検索",
+    "noAgents": "エージェントがありません。",
+    "noResults": "検索結果がありません。"
+  },
+  "category": {
+    "school": "学校",
+    "professor": "教授",
+    "student": "学生",
+    "group": "グループ",
+    "feature": "機能"
+  },
+  "info": {
+    "name": "名前",
+    "description": "説明",
+    "type": "タイプ",
+    "manager": "管理者",
+    "organization": "所属",
+    "documents": "ドキュメント",
+    "users": "ユーザー",
+    "status": "ステータス",
+    "settings": "設定"
+  },
+  "action": {
+    "create": "エージェント作成",
+    "edit": "エージェント編集",
+    "delete": "エージェント削除",
+    "deleteConfirm": "このエージェントを削除しますか？",
+    "deleteSuccess": "エージェントが削除されました。",
+    "deleteFailed": "エージェントの削除に失敗しました。"
+  },
+  "persona": {
+    "title": "ペルソナ編集",
+    "description": "エージェントの性格と応答スタイルを設定します。",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "saveSuccess": "ペルソナが保存されました。",
+    "saveFailed": "ペルソナの保存に失敗しました。"
+  },
+  "settings": {
+    "title": "モデル・応答設定",
+    "llmModel": "LLMモデル",
+    "chatbotType": "チャットボットタイプ",
+    "visibility": "公開範囲",
+    "webSearch": "ウェブ検索",
+    "saveSuccess": "設定が保存されました。",
+    "saveFailed": "設定の保存に失敗しました。"
+  },
+  "icon": {
+    "title": "アイコン変更",
+    "default": "デフォルトアイコン",
+    "upload": "画像アップロード",
+    "select": "アイコン選択",
+    "changeSuccess": "アイコンが変更されました。",
+    "changeFailed": "アイコンの変更に失敗しました。"
+  },
+  "file": {
+    "title": "ファイル一覧",
+    "upload": "ファイルアップロード",
+    "uploadSuccess": "ファイルがアップロードされました。",
+    "uploadFailed": "ファイルのアップロードに失敗しました。",
+    "delete": "ファイル削除",
+    "deleteSuccess": "ファイルが削除されました。",
+    "deleteFailed": "ファイルの削除に失敗しました。",
+    "noFiles": "ファイルがありません。"
+  }
+}

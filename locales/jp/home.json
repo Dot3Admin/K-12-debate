@@ -1,0 +1,25 @@
+{
+  "searchPlaceholder": "チャットルームまたはエージェント名を検索してください。",
+  "createGroupChatTooltip": "グループチャット作成",
+  "tabs": {
+    "chat": "チャット",
+    "management": "エージェント管理"
+  },
+  "chatRooms": "チャットルーム",
+  "createGroupChat": "+ グループ作成",
+  "groupChatCount": "グループチャット{{count}}件",
+  "agentCount": "エージェント{{count}}件",
+  "categories": {
+    "all": "全て",
+    "school": "学校",
+    "professor": "教授",
+    "student": "学生",
+    "group": "グループ",
+    "function": "機能"
+  },
+  "accountSettings": "アカウント設定",
+  "selectAgent": "エージェントを選択してください",
+  "selectAgentDesc": "左側からチャットしたいエージェントを選択すると、ここにチャット画面が表示されます。",
+  "manageAgent": "管理するエージェントを選択してください",
+  "manageAgentDesc": "左側からエージェントを選択後、チャット画面右上の「機能選択」メニューをクリックすると、エージェント詳細設定機能を使用できます。"
+}

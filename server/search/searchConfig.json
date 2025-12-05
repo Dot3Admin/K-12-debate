@@ -1,0 +1,56 @@
+{
+  "allowedDomains": [
+    "ytn.co.kr",
+    "yna.co.kr",
+    "hankyung.com",
+    "mk.co.kr",
+    "khan.co.kr",
+    "hani.co.kr",
+    "chosun.com",
+    "donga.com",
+    "joongang.co.kr",
+    "sbs.co.kr",
+    "kbs.co.kr",
+    "mbc.co.kr",
+    "newsis.com",
+    "jtbc.co.kr",
+    "nocutnews.co.kr",
+    "news1.kr",
+    "edaily.co.kr",
+    "sports.khan.co.kr",
+    "sports.hankyung.com",
+    "sports.chosun.com",
+    "sportsworldi.com"
+  ],
+  "deniedDomains": [
+    "namu.wiki",
+    "namuwiki.com",
+    "blog.naver.com",
+    "tistory.com",
+    "blogspot.com",
+    "wikipedia.org",
+    "naver.com/search",
+    "daum.net/search",
+    "google.com/search"
+  ],
+  "searchFocusTerms": {
+    "정치인": ["발언", "논평", "입장", "주장", "인터뷰", "회견", "연설"],
+    "평론가": ["분석", "비판", "평가", "전망", "우려", "지적"],
+    "연예인": ["고백", "밝혔다", "언급", "고충", "심경", "소감"],
+    "전문가": ["견해", "의견", "진단", "예측", "경고", "제안"],
+    "작가": ["작품", "집필", "출간", "인터뷰", "발표"],
+    "운동선서": ["경기", "인터뷰", "소감", "각오", "목표"],
+    "핵잠수함": ["원자력잠수함", "핵추진 잠수함", "SSBN", "SSN"],
+    "반도체": ["파운드리", "메모리칩", "시스템반도체", "칩셋"],
+    "자주국방": ["독자 국방", "군사적 주권", "국산 무기 개발"],
+    "미국 제일주의": ["America First", "트럼프주의", "고립주의"]
+  },
+  "defaultExcludeOperators": [
+    "-site:blog.naver.com",
+    "-site:tistory.com",
+    "-site:blogspot.com",
+    "-site:namu.wiki"
+  ],
+  "requiredKeywordsMode": "any",
+  "maxQueryLength": 256
+}

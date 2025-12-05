@@ -1,0 +1,68 @@
+{
+  "button": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "upload": "Upload",
+    "download": "Download",
+    "search": "Search",
+    "filter": "Filter",
+    "refresh": "Refresh",
+    "create": "Create",
+    "add": "Add",
+    "remove": "Remove",
+    "send": "Send",
+    "apply": "Apply",
+    "reset": "Reset"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "pending": "Pending",
+    "locked": "Locked",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "uploading": "Uploading...",
+    "processing": "Processing...",
+    "success": "Success",
+    "failed": "Failed",
+    "completed": "Completed"
+  },
+  "time": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "recent": "Recent",
+    "ago": "ago",
+    "justNow": "Just now"
+  },
+  "unit": {
+    "count": "{{count}} items",
+    "items": "items",
+    "files": "files",
+    "pages": "pages"
+  },
+  "navigation": {
+    "home": "Home",
+    "back": "Back",
+    "forward": "Forward",
+    "menu": "Menu",
+    "settings": "Settings"
+  },
+  "optional": "Optional",
+  "count": "",
+  "people": "",
+  "checking": "Checking...",
+  "creating": "Creating...",
+  "invite": "Invite",
+  "retry": "Retry",
+  "added": " has been added to the invitation list.",
+  "all": "All",
+  "logout": "logout",
+  "loading": "Loading..."
+}

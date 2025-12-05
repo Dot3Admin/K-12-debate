@@ -1,0 +1,1484 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  /* 스크롤바 숨기기 - 드래그 스크롤용 */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari, Opera */
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Windows Phone Live Tile Typography */
+  .live-tile-title {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-weight: 400;
+    font-size: 1.125rem;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .live-tile-subtitle {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-weight: 400;
+    font-size: 0.875rem;
+    line-height: 1.3;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .live-tile-label {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-weight: 400;
+    font-size: 0.6875rem;
+    text-transform: lowercase;
+    letter-spacing: 0.02em;
+  }
+}
+
+/* Text Style Classes */
+@layer components {
+  /* Typography Styles */
+  .text-h1 {
+    @apply text-[32px] font-bold leading-tight;
+  }
+  
+  .text-h2 {
+    @apply text-[24px] font-semibold leading-tight;
+  }
+  
+  .text-subtitle {
+    @apply text-[18px] font-medium leading-relaxed;
+  }
+  
+  .text-body {
+    @apply text-[16px] font-normal leading-normal;
+  }
+  
+  .text-caption {
+    @apply text-[11px] font-light text-gray-500 dark:text-gray-400 leading-relaxed;
+  }
+  
+  .text-button {
+    @apply text-[14px] font-bold uppercase tracking-wide;
+  }
+
+  /* Button Component Styles */
+  .button {
+    @apply inline-flex items-center justify-center px-4 py-2.5 text-sm font-bold text-white bg-[#1F75FE] rounded-lg transition-all duration-200 hover:bg-[#1660D4] focus:outline-none focus:ring-2 focus:ring-[#1F75FE] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#1F75FE];
+    padding: 10px 16px;
+    border-radius: 8px;
+  }
+  
+  .button-primary {
+    @apply inline-flex items-center justify-center px-4 py-2.5 text-sm font-bold text-white bg-[#0F4FBF] rounded-lg transition-all duration-200 hover:bg-[#0A3D99] focus:outline-none focus:ring-2 focus:ring-[#0F4FBF] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#0F4FBF] shadow-md hover:shadow-lg;
+    padding: 10px 16px;
+    border-radius: 8px;
+  }
+  
+  /* Active and pressed states */
+  .button:active {
+    @apply transform scale-95;
+  }
+  
+  .button-primary:active {
+    @apply transform scale-95;
+  }
+}
+
+/* Neumorphism 테마 색상 정의 */
+:root {
+  /* Neumorphism Color Palette */
+  --neu-bg: #e0e5ec;
+  --neu-shadow-dark: #a3b1c6;
+  --neu-shadow-light: #ffffff;
+  --neu-surface: #e0e5ec;
+  --neu-primary: #667eea;
+  --neu-secondary: #764ba2;
+  --neu-accent: #f093fb;
+  --neu-text: #4a5568;
+  --neu-text-light: #718096;
+  --neu-success: #48bb78;
+  --neu-warning: #ed8936;
+  --neu-error: #f56565;
+  
+  /* Original Variables for Compatibility */
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(240, 10%, 3.9%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(240, 10%, 3.9%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(240, 10%, 3.9%);
+  --primary: hsl(240, 9%, 98%);
+  --primary-foreground: hsl(240, 5.9%, 10%);
+  --secondary: hsl(240, 4.8%, 95.9%);
+  --secondary-foreground: hsl(240, 5.9%, 10%);
+  --muted: hsl(240, 4.8%, 95.9%);
+  --muted-foreground: hsl(240, 3.8%, 46.1%);
+  --accent: hsl(240, 4.8%, 95.9%);
+  --accent-foreground: hsl(240, 5.9%, 10%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 5.9%, 90%);
+  --input: hsl(240, 5.9%, 90%);
+  --ring: hsl(240, 5.9%, 10%);
+  --chart-1: hsl(12, 76%, 61%);
+  --chart-2: hsl(173, 58%, 39%);
+  --chart-3: hsl(197, 37%, 24%);
+  --chart-4: hsl(43, 74%, 66%);
+  --chart-5: hsl(27, 87%, 67%);
+  --radius: 0.75rem;
+}
+
+.dark {
+  /* Dark Neumorphism Colors */
+  --neu-bg: #2d3748;
+  --neu-shadow-dark: #1a202c;
+  --neu-shadow-light: #4a5568;
+  --neu-surface: #2d3748;
+  --neu-primary: #667eea;
+  --neu-secondary: #764ba2;
+  --neu-accent: #f093fb;
+  --neu-text: #e2e8f0;
+  --neu-text-light: #a0aec0;
+  --neu-success: #48bb78;
+  --neu-warning: #ed8936;
+  --neu-error: #f56565;
+  
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(210, 40%, 98%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(207, 90%, 54%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased;
+    font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overscroll-behavior: none;
+    background: #ffffff;
+    color: #374151;
+  }
+
+  .korean-text {
+    font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    word-break: break-all;
+    overflow-wrap: anywhere;
+  }
+
+  /* 채팅방 목록 텍스트 너비 제한 */
+  .chat-list-title {
+    max-width: 32ch; /* 한글 32자 기준 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .chat-list-preview {
+    max-width: 32ch; /* 한글 32자 기준 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Neumorphism Component Styles */
+@layer components {
+  .neu-element {
+    background: var(--neu-surface);
+    border-radius: 20px;
+    box-shadow: 
+      8px 8px 16px var(--neu-shadow-dark),
+      -8px -8px 16px var(--neu-shadow-light);
+    border: none;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+  }
+  
+  .neu-pressed {
+    background: var(--neu-surface);
+    border-radius: 20px;
+    box-shadow: 
+      inset 4px 4px 8px var(--neu-shadow-dark),
+      inset -4px -4px 8px var(--neu-shadow-light);
+    transform: scale(0.98);
+  }
+  
+  .neu-button {
+    @apply neu-element;
+    padding: 12px 24px;
+    color: var(--neu-text);
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+  }
+  
+  .neu-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      10px 10px 20px var(--neu-shadow-dark),
+      -10px -10px 20px var(--neu-shadow-light);
+  }
+  
+  .neu-button:active {
+    @apply neu-pressed;
+  }
+  
+  .neu-input {
+    @apply neu-pressed;
+    padding: 16px 20px;
+    color: var(--neu-text);
+    background: var(--neu-surface);
+    border: none;
+    outline: none;
+    font-size: 16px;
+    min-height: 52px;
+  }
+  
+  .neu-input:focus {
+    box-shadow: 
+      inset 2px 2px 4px var(--neu-shadow-dark),
+      inset -2px -2px 4px var(--neu-shadow-light),
+      0 0 0 3px var(--neu-primary);
+  }
+  
+  .neu-card {
+    @apply neu-element;
+    padding: 24px;
+    margin: 16px 0;
+  }
+  
+  .neu-card-small {
+    @apply neu-element;
+    padding: 16px;
+    margin: 8px 0;
+    border-radius: 16px;
+    box-shadow: 
+      4px 4px 8px var(--neu-shadow-dark),
+      -4px -4px 8px var(--neu-shadow-light);
+  }
+  
+  /* Primary Button Variant */
+  .neu-button-primary {
+    @apply neu-button;
+    background: linear-gradient(135deg, var(--neu-primary), var(--neu-secondary));
+    color: white;
+    box-shadow: 
+      8px 8px 16px var(--neu-shadow-dark),
+      -8px -8px 16px var(--neu-shadow-light),
+      inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+  
+  .neu-button-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      10px 10px 20px var(--neu-shadow-dark),
+      -10px -10px 20px var(--neu-shadow-light),
+      inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+  
+  /* Success Button Variant */
+  .neu-button-success {
+    @apply neu-button;
+    background: linear-gradient(135deg, var(--neu-success), #38a169);
+    color: white;
+    box-shadow: 
+      8px 8px 16px var(--neu-shadow-dark),
+      -8px -8px 16px var(--neu-shadow-light),
+      inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+  
+  /* Warning Button Variant */
+  .neu-button-warning {
+    @apply neu-button;
+    background: linear-gradient(135deg, var(--neu-warning), #dd6b20);
+    color: white;
+    box-shadow: 
+      8px 8px 16px var(--neu-shadow-dark),
+      -8px -8px 16px var(--neu-shadow-light),
+      inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+  
+  /* Error Button Variant */
+  .neu-button-error {
+    @apply neu-button;
+    background: linear-gradient(135deg, var(--neu-error), #e53e3e);
+    color: white;
+    box-shadow: 
+      8px 8px 16px var(--neu-shadow-dark),
+      -8px -8px 16px var(--neu-shadow-light),
+      inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+  
+  /* Message Bubbles - Updated to Minimal Flat */
+  .neu-message-user {
+    @apply minimal-message user;
+  }
+  
+  .neu-message-ai {
+    @apply minimal-message assistant;
+  }
+  
+  /* Chat Input - Updated to Minimal Flat */
+  .neu-chat-input {
+    @apply minimal-input;
+  }
+  
+  /* Send Button - Updated to Minimal Flat */
+  .neu-send-button {
+    @apply minimal-send-button;
+  }
+}
+
+/* Minimal Flat UI 디자인 */
+.minimal-agent-card {
+  @apply p-4 bg-white dark:bg-gray-800 border-0 border-b border-gray-200 dark:border-gray-700;
+  transition: background-color 0.15s ease;
+  margin: 0;
+}
+
+.minimal-agent-card:hover {
+  @apply bg-gray-50 dark:bg-gray-700;
+}
+
+.minimal-agent-card.active {
+  @apply bg-blue-50 dark:bg-blue-900/30;
+  border-left: 3px solid #2563eb;
+}
+
+/* 메시지 스타일링 - Minimal Flat UI with Bubble Shapes */
+.minimal-message {
+  padding: 12px 16px;
+  max-width: 85%; /* 70% → 85%: 짧은 메시지가 더 넓게 표시 */
+  width: fit-content; /* auto → fit-content: 내용에 딱 맞게 조정 */
+  word-wrap: break-word;
+  overflow-wrap: break-word; /* anywhere → break-word: 짧은 메시지 줄바꿈 방지 */
+  position: relative;
+  display: inline-block;
+  border-radius: 18px;
+  box-shadow: none;
+  hyphens: none; /* auto → none: 하이픈 줄바꿈 비활성화 */
+  font-size: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  word-break: keep-all; /* 한글 단어가 중간에 끊기지 않도록 */
+  overflow: visible; /* 표 스크롤이 작동하도록 */
+}
+
+/* 표를 포함한 메시지는 채팅방 프레임 내에서 제한 */
+.minimal-message:has(.table-scroll-container) {
+  max-width: min(85%, calc(100% - 80px)) !important; /* 채팅방 컨테이너 기준 - 여백 고려 */
+  overflow-wrap: normal; /* 표는 줄바꿈하지 않음 */
+  /* overflow: hidden 제거 - 꼬리가 보이도록 */
+  box-sizing: border-box;
+}
+
+/* 표를 포함한 메시지의 내부 컨텐츠만 overflow 제어 */
+.minimal-message:has(.table-scroll-container) > * {
+  max-width: 100%;
+}
+
+/* 사용자 메시지 - Apple Messages 스타일 */
+.minimal-message.user {
+  background: #3C91FF !important;
+  color: #ffffff !important;
+  margin-left: auto;
+  margin-right: 12px;
+  border-radius: 18px;
+  border-bottom-right-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* 사용자 메시지 말풍선 tail - Apple 스타일 (오른쪽 하단) */
+.minimal-message.user::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: -8px;
+  width: 20px;
+  height: 20px;
+  background: #3C91FF;
+  border-bottom-left-radius: 16px;
+}
+
+.minimal-message.user::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: -10px;
+  width: 10px;
+  height: 20px;
+  background: #ffffff;
+  border-bottom-left-radius: 10px;
+}
+
+/* 사용자 질문 - 말풍선 없는 심플 스타일 */
+.user-question {
+  max-width: 100%;
+  width: 100%;
+  text-align: center;
+  padding: 16px 24px;
+  margin: 16px 0 24px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.6;
+  word-break: keep-all;
+  border-bottom: 2px solid #e5e5ea;
+  background: transparent;
+}
+
+.dark .user-question {
+  color: #ffffff;
+  border-bottom-color: #3A3A3C;
+}
+
+/* AI 메시지 - Apple Messages 스타일 */
+.minimal-message.assistant {
+  background: #e5e5ea;
+  color: #000000;
+  margin-right: auto;
+  margin-left: 12px;
+  float: left;
+  clear: both;
+  border-radius: 18px;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* AI 메시지 말풍선 tail - Apple 스타일 (왼쪽 하단) */
+.minimal-message.assistant::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -8px;
+  width: 20px;
+  height: 20px;
+  background: #e5e5ea;
+  border-bottom-right-radius: 16px;
+}
+
+.minimal-message.assistant::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -10px;
+  width: 10px;
+  height: 20px;
+  background: #ffffff;
+  border-bottom-right-radius: 10px;
+}
+
+/* 다크모드에서 AI 메시지 */
+.dark .minimal-message.assistant {
+  background: #3A3A3C;
+  color: #ffffff;
+}
+
+/* 다크모드 AI 메시지 tail 색상 */
+.dark .minimal-message.assistant::before {
+  background: #3A3A3C;
+}
+
+.dark .minimal-message.assistant::after {
+  background: #1a1a1a;
+}
+
+/* 다크모드에서 사용자 메시지 */
+.dark .minimal-message.user {
+  background: #3C91FF !important;
+  color: #ffffff !important;
+}
+
+/* 다크모드 사용자 메시지 tail 색상 */
+.dark .minimal-message.user::before {
+  background: #3C91FF !important;
+}
+
+.dark .minimal-message.user::after {
+  background: #1a1a1a !important;
+}
+
+/* 🔔 시스템 알림 스타일 - 심플한 중앙 정렬 */
+.system-notification {
+  text-align: center;
+  padding: 4px 0 16px 0; /* 위쪽만 4px로 줄임 */
+}
+
+.system-notification-text {
+  font-size: 13px;
+  color: #8e8e93;
+  line-height: 1.4;
+}
+
+.dark .system-notification-text {
+  color: #98989d;
+}
+
+/* 이모지 포함 알림 (선택) */
+.system-notification-emoji {
+  text-align: center;
+  padding: 16px 20px;
+}
+
+.system-notification-emoji-text {
+  font-size: 13px;
+  color: #8e8e93;
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.dark .system-notification-emoji-text {
+  color: #98989d;
+}
+
+.system-notification-emoji .emoji {
+  font-size: 15px;
+}
+
+/* 타임스탬프 스타일 */
+.timestamp {
+  text-align: center;
+  padding: 4px 0 0 0; /* 아래 간격 제거 */
+}
+
+.timestamp-text {
+  display: inline-block;
+  font-size: 12px;
+  color: #8e8e93;
+  background: rgba(142, 142, 147, 0.08);
+  padding: 4px 10px;
+  border-radius: 10px;
+}
+
+.dark .timestamp-text {
+  color: #98989d;
+  background: rgba(152, 152, 157, 0.12);
+}
+
+/* 🎭 Task 4: Agent-Specific Thinking Styles */
+.thinking-style-historical {
+  @apply bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300;
+  animation: thinkingHistorical 2.5s ease-in-out infinite;
+}
+
+.thinking-style-modern {
+  @apply bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300;
+  animation: thinkingModern 1.8s ease-in-out infinite;
+}
+
+.thinking-style-academic {
+  @apply bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300;
+  animation: thinkingAcademic 3s ease-in-out infinite;
+}
+
+@keyframes thinkingHistorical {
+  0%, 100% { opacity: 0.7; filter: sepia(0.1); }
+  50% { opacity: 0.9; filter: sepia(0.3); }
+}
+
+@keyframes thinkingModern {
+  0%, 100% { opacity: 0.8; transform: translateX(0px); }
+  50% { opacity: 1; transform: translateX(1px); }
+}
+
+@keyframes thinkingAcademic {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.01); }
+}
+
+/* 다른 사용자 메시지 - Apple Messages 스타일 (회색) */
+.minimal-message.other-user {
+  background: #E9E9EB !important;
+  color: #000000 !important;
+  margin-left: 12px;
+  margin-right: auto;
+  float: left;
+  clear: both;
+  border-radius: 18px;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* 다른 사용자 메시지 말풍선 tail - Apple 스타일 (왼쪽 하단) */
+.minimal-message.other-user::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -8px;
+  width: 20px;
+  height: 20px;
+  background: #E9E9EB !important;
+  border-bottom-right-radius: 16px;
+}
+
+.minimal-message.other-user::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -10px;
+  width: 10px;
+  height: 20px;
+  background: #ffffff !important;
+  border-bottom-right-radius: 10px;
+}
+
+/* 다크모드에서 다른 사용자 메시지 */
+.dark .minimal-message.other-user {
+  background: #3A3A3C !important;
+  color: #ffffff !important;
+}
+
+/* 다크모드 다른 사용자 메시지 tail 색상 */
+.dark .minimal-message.other-user::before {
+  background: #3A3A3C !important;
+}
+
+.dark .minimal-message.other-user::after {
+  background: #1a1a1a !important;
+}
+
+/* 다른 사용자 메시지 (컬러) - Apple Messages 스타일 */
+.minimal-message.other-user-colored {
+  margin-left: 12px;
+  margin-right: auto;
+  float: left;
+  clear: both;
+  border-radius: 18px;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+/* 다른 사용자 메시지 말풍선 tail - Apple 스타일 (왼쪽 하단) */
+.minimal-message.other-user-colored::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -8px;
+  width: 20px;
+  height: 20px;
+  background: inherit;
+  border-bottom-right-radius: 16px;
+}
+
+.minimal-message.other-user-colored::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -10px;
+  width: 10px;
+  height: 20px;
+  background: #ffffff;
+  border-bottom-right-radius: 10px;
+}
+
+/* 다크모드에서 다른 사용자 메시지 tail 배경 */
+.dark .minimal-message.other-user-colored::after {
+  background: #1a1a1a;
+}
+
+/* 시스템 메시지 - 어두운 회색 배경의 넓은 직사각형 */
+.minimal-message.system-message {
+  background: #374151;
+  color: #ffffff;
+  margin: 4px auto; /* 마진을 절반으로 줄여서 더 넓게 */
+  text-align: center;
+  font-size: 0.875rem; /* 글자 크기 원래대로 */
+  line-height: 1.2; /* 행 간격 타이트하게 */
+  max-width: none; /* 최대 폭 제한 제거 */
+  width: calc(100% - 8px); /* 양쪽 4px 마진만 남기고 전체 폭 사용 (50% 더 넓게) */
+  float: none;
+  border-radius: 16px;
+  padding: 0.5em 4.5em; /* 좌우 패딩을 다시 늘려서 알림창 넓게 유지 */
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dark .minimal-message.system-message {
+  background: #4b5563;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* 시스템 메시지 내부의 bullet point 영역을 중앙 배치하되 텍스트는 좌측 정렬 */
+.minimal-message.system-message .bullet-points {
+  display: inline-block;
+  text-align: left;
+  margin: 12px auto;
+}
+
+/* 입력 영역 - 미니멀 플랫 스타일 */
+.minimal-input-container {
+  @apply flex items-end gap-2;
+  padding: 16px;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  width: 100%;
+}
+
+.dark .minimal-input-container {
+  background: #1f2937;
+  border-top: 1px solid #374151;
+}
+
+.minimal-input {
+  @apply flex-1 resize-none border-0 px-4;
+  @apply bg-white dark:bg-gray-700 text-gray-900 dark:text-white;
+  height: 40px;
+  min-height: 40px;
+  max-height: 120px;
+  width: 100%;
+  font-size: 16px;
+  line-height: 1.4;
+  border-left: 4px solid #cbd5e1;
+  outline: none;
+  box-shadow: none;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.minimal-input:focus {
+  border-left: 4px solid #2563eb;
+}
+
+.dark .minimal-input {
+  border-left: 4px solid #64748b;
+}
+
+.dark .minimal-input:focus {
+  border-left: 4px solid #3b82f6;
+}
+
+.minimal-send-button {
+  @apply w-12 h-12 flex items-center justify-center text-white;
+  background: #2563eb;
+  transition: background-color 0.15s ease;
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
+
+.minimal-send-button:hover {
+  background: #1d4ed8;
+}
+
+.minimal-send-button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* 탭 네비게이션 - 미니멀 플랫 스타일 */
+.minimal-nav-tabs {
+  @apply bg-gray-100 dark:bg-gray-800 mb-4;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.dark .minimal-nav-tabs {
+  border-bottom: 2px solid #475569;
+}
+
+.minimal-nav-tab {
+  @apply px-6 py-3 text-center font-medium transition-all;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.minimal-nav-tab.active {
+  @apply bg-white dark:bg-gray-700;
+  color: #2563eb !important;
+  font-weight: 600;
+  border-bottom: 3px solid #2563eb;
+}
+
+.minimal-nav-tab:not(.active) {
+  @apply bg-transparent;
+  color: #64748b !important;
+  font-weight: 400;
+  border-bottom: 3px solid transparent;
+}
+
+.minimal-nav-tab:not(.active):hover {
+  @apply bg-gray-50 dark:bg-gray-700/50;
+}
+
+.dark .minimal-nav-tab:not(.active) {
+  color: #94a3b8 !important;
+}
+
+/* 반응형 에이전트 그리드 */
+.responsive-agent-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0 8px;
+  margin: 0;
+  width: 100%;
+}
+
+/* 타이핑 인디케이터 */
+.typing-indicator {
+  @apply flex items-center gap-1 px-4 py-2;
+}
+
+.typing-indicator span {
+  @apply w-2 h-2 bg-muted-foreground rounded-full animate-pulse;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* 🎭 Task 4: Enhanced Thinking Indicators */
+.thinking-bubble {
+  @apply relative bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-2xl px-4 py-3 max-w-xs text-sm italic;
+  animation: thinkingPulse 2s ease-in-out infinite;
+}
+
+.thinking-bubble::before {
+  content: '';
+  @apply absolute left-3 -bottom-2 w-0 h-0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid theme('colors.gray.100');
+}
+
+.dark .thinking-bubble::before {
+  border-top-color: theme('colors.gray.800');
+}
+
+/* 🎯 에이전트 개성별 thinking 애니메이션 */
+.thinking-intense {
+  animation: thinkingIntense 1.5s ease-in-out infinite;
+}
+
+.thinking-calm {
+  animation: thinkingCalm 3s ease-in-out infinite;
+}
+
+.thinking-excited {
+  animation: thinkingExcited 1s ease-in-out infinite;
+}
+
+@keyframes thinkingPulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+@keyframes thinkingIntense {
+  0%, 100% { opacity: 0.7; transform: scale(1) rotate(0deg); }
+  25% { opacity: 0.9; transform: scale(1.03) rotate(0.5deg); }
+  75% { opacity: 0.8; transform: scale(1.01) rotate(-0.5deg); }
+}
+
+@keyframes thinkingCalm {
+  0%, 100% { opacity: 0.5; transform: translateY(0px); }
+  50% { opacity: 0.8; transform: translateY(-2px); }
+}
+
+@keyframes thinkingExcited {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  33% { opacity: 1; transform: scale(1.05); }
+  66% { opacity: 0.9; transform: scale(0.98); }
+}
+
+/* 💭 Thinking dots 개선 */
+.thinking-dots {
+  @apply flex items-center gap-1 ml-2;
+}
+
+.thinking-dot {
+  @apply w-1.5 h-1.5 bg-gray-400 rounded-full;
+  animation: thinkingDotBounce 1.4s ease-in-out infinite both;
+}
+
+.thinking-dot:nth-child(1) { animation-delay: -0.32s; }
+.thinking-dot:nth-child(2) { animation-delay: -0.16s; }
+.thinking-dot:nth-child(3) { animation-delay: 0s; }
+
+@keyframes thinkingDotBounce {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* 메시지 컨테이너 - 강제 스크롤 활성화 */
+.chat-interface-messages {
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  height: calc(100vh - 220px) !important;
+  max-height: calc(100vh - 220px) !important;
+  scroll-behavior: smooth !important;
+  -webkit-overflow-scrolling: touch !important;
+  position: relative !important;
+}
+
+/* PC에서 강제 스크롤 활성화 */
+@media (min-width: 769px) {
+  .chat-interface-messages {
+    overflow-y: scroll !important;
+    height: calc(100vh - 240px) !important;
+    max-height: calc(100vh - 240px) !important;
+  }
+}
+
+.messages-container {
+  display: block;
+  gap: 8px;
+  padding-bottom: 40px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden !important; /* 말풍선이 프레임을 넘지 않도록 */
+}
+
+/* 메시지 행 스타일링 */
+.message-row {
+  width: 100%;
+  display: block;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .responsive-agent-grid {
+    padding: 0 8px;
+  }
+
+  .chat-interface-messages {
+    height: calc(100vh - 260px);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  
+  .messages-container {
+    padding-bottom: 50px;
+  }
+
+  .message-bubble {
+    max-width: 52ch; /* 한글 52자, 영문 90자 기준 - 모바일에서도 동일 */
+  }
+
+  .apple-nav-tab {
+    height: 56px;
+    font-size: 16px;
+  }
+}
+
+/* 태블릿 반응형 */
+@media (min-width: 768px) {
+  .responsive-agent-grid {
+    padding: 0 16px;
+  }
+
+  .apple-nav-tab {
+    height: 64px;
+    font-size: 18px;
+  }
+
+  .tablet-messages-container {
+    height: calc(100vh - 240px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scroll-behavior: smooth !important;
+  }
+}
+
+/* 데스크톱 반응형 */
+@media (min-width: 1024px) {
+  .responsive-agent-grid {
+    padding: 0 24px;
+  }
+}
+
+/* 관리자 페이지 반응형 네비게이션 탭 */
+.admin-tabs-responsive {
+  @apply grid w-full gap-1 h-auto p-1;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (min-width: 640px) {
+  .admin-tabs-responsive {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-tabs-responsive {
+    grid-template-columns: repeat(8, 1fr);
+  }
+}
+
+.admin-tab-trigger {
+  @apply text-xs px-2 py-2 h-auto flex items-center justify-center;
+  min-height: 48px;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+@media (min-width: 640px) {
+  .admin-tab-trigger {
+    @apply text-sm px-3 py-2;
+    font-size: 14px;
+    min-height: 52px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-tab-trigger {
+    @apply text-base px-4 py-3;
+    font-size: 16px;
+    min-height: 56px;
+  }
+}
+
+.admin-tab-icon {
+  @apply mr-1;
+  width: 12px;
+  height: 12px;
+}
+
+@media (min-width: 640px) {
+  .admin-tab-icon {
+    @apply mr-2;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-tab-icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* 아이패드 세로 모드 (768px - 834px) */
+@media (min-width: 768px) and (max-width: 834px) and (orientation: portrait) {
+  .responsive-agent-grid {
+    padding: 0 32px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .apple-agent-card {
+    padding: 24px 28px;
+    margin: 4px 0;
+  }
+
+  .mobile-container {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .apple-nav-tabs {
+    max-width: 600px;
+    margin: 16px auto;
+    padding: 6px;
+  }
+
+  .apple-nav-tab {
+    padding: 16px 24px;
+    font-size: 18px;
+    font-weight: 600;
+  }
+}
+
+/* 채팅 인터페이스 컨테이너 - 그룹 대화방과 동일한 스타일 */
+.chat-interface-container {
+  height: 100%;
+  background: #f9fafb;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-page-container {
+  height: 100%;
+  background: #f9fafb;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 모바일 메신저 스타일 입력창 */
+.fixed-chat-input {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  z-index: 1000;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  padding: 16px;
+}
+
+.dark .fixed-chat-input {
+  background: #1f2937;
+  border-top-color: #374151;
+}
+
+/* 태블릿 모드에서는 인라인 스타일 */
+.chat-input-area {
+  position: static;
+  width: 100%;
+  background: transparent;
+  border-top: 1px solid #e5e7eb;
+  padding: 16px;
+}
+
+.dark .chat-input-area {
+  border-top-color: #374151;
+}
+
+/* Apple Messages 스타일 탭 네비게이션 - 하단 밑줄 스타일 */
+.apple-nav-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  background: transparent;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0;
+  gap: 0;
+  margin-bottom: 16px;
+}
+
+.dark .apple-nav-tabs {
+  background: transparent;
+  border-bottom: 1px solid #374151;
+}
+
+.apple-nav-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background: transparent;
+  color: #6b7280;
+  border: none;
+  border-bottom: 2px solid transparent;
+  outline: none;
+  position: relative;
+}
+
+.apple-nav-tab.active {
+  background: transparent;
+  color: #2563eb;
+  font-weight: 600;
+  border-bottom: 2px solid #2563eb;
+  box-shadow: none;
+}
+
+.dark .apple-nav-tab {
+  color: #9ca3af;
+}
+
+.dark .apple-nav-tab.active {
+  background: transparent;
+  color: #3b82f6;
+  border-bottom: 2px solid #3b82f6;
+  box-shadow: none;
+}
+
+.apple-nav-tab:hover:not(.active) {
+  background: transparent;
+  color: #374151;
+}
+
+.dark .apple-nav-tab:hover:not(.active) {
+  background: transparent;
+  color: #d1d5db;
+}
+
+/* 리액션 UI 오버플로우 설정 */
+.messages-container {
+  overflow-x: hidden !important; /* 메시지가 채팅방 프레임을 넘지 않도록 */
+  width: 100%;
+  max-width: 100%;
+}
+
+.message-row {
+  position: relative;
+  overflow-x: visible !important; /* 리액션만 넘칠 수 있도록 */
+  width: 100%;
+  max-width: 100%;
+}
+
+.chat-interface-messages {
+  overflow-x: hidden !important; /* 채팅방 프레임 제한 */
+}
+
+/* 리액션 UI가 잘리지 않도록 보장 */
+.message-row > div {
+  overflow: visible !important;
+}
+
+/* 표를 포함한 메시지는 overflow 제한 - 꼬리는 제외 */
+.message-row:has(.table-scroll-container) > div {
+  overflow-x: clip; /* 가로만 제한, 세로는 visible (꼬리 보존) */
+  max-width: 100%;
+}
+
+/* 모바일에서 입력창이 화면 전체 폭 사용 */
+@media (max-width: 767px) {
+  .apple-input-container {
+    padding: 12px 16px;
+    gap: 12px;
+  }
+  
+  .apple-chat-input {
+    font-size: 16px;
+    padding: 12px 16px;
+    min-height: 44px;
+  }
+}
+
+/* 📊 Markdown 표 스타일링 */
+/* 표 스크롤 컨테이너 */
+.table-scroll-container {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch;
+  margin: 12px 0 !important;
+  border-radius: 8px !important;
+  background: #f9fafb !important;
+  padding: 4px !important;
+  padding-bottom: 8px !important; /* 스크롤바 공간 확보 */
+  /* 말풍선 내부에서 스크롤 작동하도록 */
+  max-width: 100% !important;
+  width: 100% !important; /* fit-content 제거하여 말풍선 확장 방지 */
+  /* 스크롤바 항상 명확하게 표시 */
+  scrollbar-width: auto; /* thin 대신 auto로 더 명확하게 */
+  scrollbar-color: #94a3b8 #e2e8f0; /* 더 진한 색상 */
+  scrollbar-gutter: stable; /* 스크롤바 공간 예약 */
+}
+
+/* WebKit 브라우저 (Chrome, Safari) 스크롤바 스타일 - 더 명확하게 */
+.table-scroll-container::-webkit-scrollbar {
+  height: 14px !important; /* 더 두껍게 */
+  display: block !important; /* 항상 표시 */
+}
+
+.table-scroll-container::-webkit-scrollbar-track {
+  background: #e2e8f0 !important; /* 더 진한 배경 */
+  border-radius: 7px !important;
+  margin: 0 4px !important;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb {
+  background: #94a3b8 !important; /* 더 진한 색상 */
+  border-radius: 7px !important;
+  border: 3px solid #e2e8f0 !important;
+  min-width: 50px !important; /* 최소 크기 보장 */
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #64748b !important; /* 호버 시 더 진하게 */
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb:active {
+  background: #475569 !important; /* 드래그 시 가장 진하게 */
+}
+
+.dark .table-scroll-container {
+  background: #334155;
+  scrollbar-color: #64748b #1e293b;
+}
+
+.dark .table-scroll-container::-webkit-scrollbar-track {
+  background: #1e293b !important;
+}
+
+.dark .table-scroll-container::-webkit-scrollbar-thumb {
+  background: #64748b !important;
+  border-color: #1e293b !important;
+}
+
+.dark .table-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #475569 !important;
+}
+
+/* 말풍선 내부의 표 컨테이너는 줄바꿈 방지 */
+.minimal-message .table-scroll-container {
+  overflow-wrap: normal;
+  word-wrap: normal;
+  word-break: normal;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  display: block;
+  max-width: 100%; /* 말풍선 내부에 꽉 차게 */
+  width: 100%; /* 전체 너비 사용 */
+}
+
+.markdown-table {
+  width: auto !important;
+  min-width: 100% !important;
+  border-collapse: collapse !important;
+  font-size: 13px !important;
+  background: white !important;
+}
+
+.dark .markdown-table {
+  background: #1e293b;
+}
+
+.markdown-table th,
+.markdown-table td,
+.markdown-table-header,
+.markdown-table-cell {
+  border: 1px solid #e5e7eb !important;
+  padding: 6px 10px !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+}
+
+.dark .markdown-table th,
+.dark .markdown-table td,
+.dark .markdown-table-header,
+.dark .markdown-table-cell {
+  border: 1px solid #334155;
+}
+
+.markdown-table th,
+.markdown-table-header {
+  background-color: #f3f4f6;
+  font-weight: 600;
+  color: #374151;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.dark .markdown-table th,
+.dark .markdown-table-header {
+  background-color: #334155;
+  color: #e2e8f0;
+}
+
+.markdown-table tr:hover {
+  background-color: #f3f4f6;
+}
+
+.dark .markdown-table tr:hover {
+  background-color: #475569;
+}
+
+/* 메시지 말풍선 안의 표는 배경색 투명 */
+.minimal-message .markdown-table {
+  background: transparent;
+}
+
+.minimal-message.user .markdown-table th,
+.minimal-message.user .markdown-table-header {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.minimal-message.user .markdown-table td,
+.minimal-message.user .markdown-table-cell {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+.minimal-message.assistant .markdown-table th,
+.minimal-message.assistant .markdown-table-header {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #1e293b;
+}
+
+.minimal-message.assistant .markdown-table td,
+.minimal-message.assistant .markdown-table-cell {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.dark .minimal-message.assistant .markdown-table th,
+.dark .minimal-message.assistant .markdown-table-header {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+}
+
+.dark .minimal-message.assistant .markdown-table td,
+.dark .minimal-message.assistant .markdown-table-cell {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 📱 모바일 대응 - 표 스타일 */
+@media (max-width: 768px) {
+  .markdown-table {
+    font-size: 11px;
+  }
+  
+  .markdown-table th,
+  .markdown-table td,
+  .markdown-table-header,
+  .markdown-table-cell {
+    padding: 4px 6px;
+  }
+  
+  .table-scroll-container {
+    margin: 8px 0;
+    padding: 2px;
+  }
+}

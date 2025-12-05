@@ -1,0 +1,25 @@
+{
+  "searchPlaceholder": "Search for chat rooms or agent names.",
+  "createGroupChatTooltip": "Create Group Chat",
+  "tabs": {
+    "chat": "Chat",
+    "management": "Agent Management"
+  },
+  "chatRooms": "Chat Rooms",
+  "createGroupChat": "+ Create Group",
+  "groupChatCount": "{{count}} Group Chats",
+  "agentCount": "{{count}} Agents",
+  "categories": {
+    "all": "All",
+    "school": "School",
+    "professor": "Professor",
+    "student": "Student",
+    "group": "Group",
+    "function": "Function"
+  },
+  "accountSettings": "Account Settings",
+  "selectAgent": "Select a chat room",
+  "selectAgentDesc": "Choose a chat room from the left to start chatting.",
+  "manageAgent": "Select an agent to manage",
+  "manageAgentDesc": "Select an agent from the left, then click the 'Functions' menu in the top right of the chat screen to access agent settings."
+}

@@ -1,0 +1,1406 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Mobile viewport and safe area handling */
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom);
+  --safe-area-inset-left: env(safe-area-inset-left);
+  --safe-area-inset-right: env(safe-area-inset-right);
+}
+
+/* Mobile viewport height handling */
+html {
+  height: 100%;
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height */
+}
+
+body {
+  height: 100%;
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height */
+  overflow-x: hidden;
+}
+
+/* Safe area utilities */
+.safe-area-top {
+  padding-top: var(--safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: var(--safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: var(--safe-area-inset-right);
+}
+
+/* Fixed header positioning */
+.fixed-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dark .fixed-header {
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom-color: #334155;
+}
+
+/* Agent list container with proper spacing */
+.agent-list-container {
+  margin-top: 0;
+  padding: 0;
+  overflow-y: auto;
+  width: 100%;
+}
+
+/* Prevent layout shifts when dropdown opens */
+.dropdown-open-prevent-shift {
+  position: static !important;
+}
+
+/* Force stable layout during dropdown state changes */
+[data-radix-popper-content-wrapper] {
+  position: fixed !important;
+}
+
+/* Stabilize main content during dropdown interactions */
+.main-content {
+  position: relative;
+  height: 100%;
+  contain: layout style paint;
+  margin-top: 80px !important;
+  padding-top: 20px !important;
+}
+
+/* Desktop adjustments */
+@media (min-width: 768px) {
+  .main-content {
+    padding-top: 0;
+  }
+}
+
+/* Remove duplicate header styles - using the earlier definition */
+
+/* Isolate dropdown menu positioning */
+.settings-dropdown-container {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Completely stable header that never moves */
+.fixed-header-stable {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 9999 !important;
+  background: var(--background) !important;
+  border-bottom: 1px solid var(--border) !important;
+  height: auto !important;
+  min-height: 80px !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+/* Prevent any dropdown from affecting layout */
+[data-radix-popper-content-wrapper] {
+  position: fixed !important;
+  z-index: 99999 !important;
+}
+
+/* Remove all animations and transforms from dropdowns */
+[data-radix-dropdown-menu-content] {
+  animation: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+/* Force main content to start below fixed header */
+.main-content {
+  margin-top: 120px !important;
+  padding-top: 0 !important;
+}
+
+/* Mobile-specific fixes for stable layout */
+@media (max-width: 767px) {
+  .fixed-header-stable {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9999 !important;
+    background: var(--background) !important;
+    transform: none !important;
+    transition: none !important;
+    height: auto !important;
+    min-height: 120px !important;
+  }
+  
+  .main-content {
+    margin-top: 120px !important;
+    padding-top: 0 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  
+  /* Completely disable all dropdown animations on mobile */
+  [data-radix-dropdown-menu-content] {
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
+    position: fixed !important;
+  }
+  
+  /* Force agent list container to be stable */
+  .agent-list-container {
+    transform: none !important;
+    transition: none !important;
+    position: relative !important;
+  }
+  
+  /* Prevent any layout shifts on mobile */
+  .mobile-container {
+    overflow: hidden !important;
+    position: relative !important;
+  }
+  
+  .mobile-container * {
+    transform: none !important;
+    transition: none !important;
+  }
+  
+  /* Force body and html to be stable */
+  body, html {
+    overflow-x: hidden !important;
+  }
+  
+  /* Completely isolate dropdown from layout flow */
+  [data-radix-popper-content-wrapper] {
+    position: fixed !important;
+    z-index: 99999 !important;
+    contain: layout style paint !important;
+  }
+}
+
+/* Basic mobile adjustments */
+@media screen and (max-width: 768px) {
+  body {
+    padding-top: 60px;
+  }
+  
+  .sticky {
+    position: fixed !important;
+    top: 60px !important;
+  }
+}
+
+@layer utilities {
+  .text-left {
+    text-align: left !important;
+  }
+  
+  .text-center {
+    text-align: center !important;
+  }
+  
+  .text-right {
+    text-align: right !important;
+  }
+  
+  .text-justify {
+    text-align: justify !important;
+  }
+  
+  /* Force all elements to left align with maximum specificity */
+  html, body, div, span, p, h1, h2, h3, h4, h5, h6 {
+    text-align: left !important;
+    direction: ltr !important;
+    writing-mode: horizontal-tb !important;
+    unicode-bidi: normal !important;
+  }
+  
+  /* Override ALL possible alignment classes except buttons */
+  [class*="text-"]:not(button):not([role="button"]):not(.btn), 
+  [class*="justify-"]:not(button):not([role="button"]):not(.btn), 
+  [class*="items-"]:not(button):not([role="button"]):not(.btn), 
+  [class*="content-"]:not(button):not([role="button"]):not(.btn) {
+    text-align: left !important;
+    direction: ltr !important;
+  }
+  
+
+
+  /* Master admin mobile spacing */
+  .master-admin-mobile {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  @media (max-width: 767px) {
+    .master-admin-mobile {
+      padding-top: calc(env(safe-area-inset-top) + 60px);
+    }
+    
+    .master-admin-mobile header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding-top: calc(env(safe-area-inset-top) + 10px);
+      z-index: 1000;
+    }
+    
+    .master-admin-mobile main {
+      padding-top: calc(env(safe-area-inset-top) + 140px);
+    }
+  }
+
+  /* Ensure button text is centered */
+  button, [role="button"], .btn {
+    text-align: center !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+  
+  /* Force every possible element selector */
+  .bg-primary, .bg-primary *,
+  .bg-muted, .bg-muted *,
+  .system-message, .system-message *,
+  .text-primary-foreground, .text-muted-foreground {
+    text-align: left !important;
+    direction: ltr !important;
+    writing-mode: horizontal-tb !important;
+    unicode-bidi: normal !important;
+  }
+  
+  /* Clean message bubble styling */
+  .bg-primary, .bg-muted, .system-message {
+    display: inline-block !important;
+    width: fit-content !important;
+    overflow-wrap: break-word !important;
+  }
+}
+
+:root {
+  --background: hsl(248, 50%, 99%);
+  --foreground: hsl(240, 10%, 3.9%);
+  --muted: hsl(240, 4.8%, 95.9%);
+  --muted-foreground: hsl(240, 3.8%, 46.1%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(240, 10%, 3.9%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(240, 10%, 3.9%);
+  --border: hsl(240, 5.9%, 90%);
+  --input: hsl(240, 5.9%, 90%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(210, 40%, 98%);
+  --secondary: hsl(240, 4.8%, 95.9%);
+  --secondary-foreground: hsl(240, 5.9%, 10%);
+  --accent: hsl(240, 4.8%, 95.9%);
+  --accent-foreground: hsl(240, 5.9%, 10%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(207, 90%, 54%);
+  --radius: 1rem;
+}
+
+.dark {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(210, 40%, 98%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(207, 90%, 54%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    /* Prevent scroll bouncing on iOS */
+    overscroll-behavior: none;
+    /* Smooth scrolling */
+    scroll-behavior: smooth;
+  }
+  
+  html {
+    /* Prevent scroll bouncing on iOS */
+    overscroll-behavior: none;
+    /* Fix height for mobile browsers */
+    height: 100%;
+    /* Prevent viewport zoom on input focus */
+    -webkit-text-size-adjust: 100%;
+    /* Support for safe area insets */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* Mobile-first responsive design */
+  .mobile-container {
+    @apply w-full mx-0 min-h-screen bg-background;
+    /* Use visual viewport height instead of 100vh to handle mobile keyboards */
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for modern browsers */
+  }
+
+  /* Full width for desktop */
+  @media (min-width: 768px) {
+    .mobile-container {
+      @apply max-w-none mx-0 w-full;
+    }
+  }
+
+  /* Force responsive grid for agent list */
+  .responsive-agent-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0 8px;
+    margin: 0;
+    width: 100%;
+  }
+
+  /* 태블릿 가로 모드 (768px+) */
+  @media (min-width: 768px) {
+    .responsive-agent-grid {
+      padding: 0 16px;
+    }
+  }
+
+  /* 데스크톱 (1024px+) */
+  @media (min-width: 1024px) {
+    .responsive-agent-grid {
+      padding: 0 24px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .responsive-agent-grid {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 0 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      width: 100% !important;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .responsive-agent-grid {
+      grid-template-columns: repeat(3, 1fr) !important;
+      gap: 1.5rem !important;
+    }
+  }
+
+  /* Pagination button consistency fix */
+  .pagination-link {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-width: 1px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+    line-height: 1 !important;
+  }
+
+  /* Ensure active pagination links maintain same size and center text */
+  .pagination-link[aria-current="page"] {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-width: 1px !important;
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    line-height: 1 !important;
+  }
+
+  @media (min-width: 1280px) {
+    .responsive-agent-grid {
+      grid-template-columns: repeat(4, 1fr) !important;
+    }
+  }
+
+  @media (min-width: 1536px) {
+    .responsive-agent-grid {
+      grid-template-columns: repeat(5, 1fr) !important;
+    }
+  }
+
+  /* Custom scrollbar for chat */
+  .chat-scroll {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .chat-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Apple Messages Style Bubbles */
+  .message-bubble {
+    @apply px-4 py-3;
+    border-radius: 18px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    max-width: 90%;
+    min-width: 40px;
+    word-break: break-all;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+  }
+
+  @media (min-width: 768px) {
+    .message-bubble {
+      max-width: 85%;
+    }
+  }
+
+  .message-bubble.user {
+    background: #4A90E2;
+    color: white;
+    border-bottom-right-radius: 6px;
+    margin-left: auto;
+    margin-right: 8px;
+  }
+
+  .message-bubble.assistant {
+    background: #E5E5E5;
+    color: #000000;
+    border-bottom-left-radius: 6px;
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  .dark .message-bubble.assistant {
+    background: #E5E5E5;
+    color: #000000;
+  }
+
+  /* Apple Messages Bubble Tails */
+  .message-bubble.user::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: -6px;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-top: 6px solid #4A90E2;
+    border-radius: 0 0 6px 0;
+  }
+
+  .message-bubble.assistant::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: -6px;
+    width: 0;
+    height: 0;
+    border-right: 6px solid transparent;
+    border-top: 6px solid #E5E5E5;
+    border-radius: 0 0 0 6px;
+  }
+
+  .dark .message-bubble.assistant::after {
+    border-top-color: #E5E5E5;
+  }
+
+  /* Apple Messages Chat Input Styling */
+  .apple-chat-input {
+    background: #F2F2F7;
+    border: 1px solid #D1D1D6;
+    border-radius: 20px;
+    padding: 10px 16px;
+    font-size: 16px;
+    line-height: 1.4;
+    resize: none;
+    outline: none;
+    transition: all 0.2s ease;
+    min-height: 40px;
+    max-height: 120px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .apple-chat-input:focus {
+    border-color: #007AFF;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+  }
+
+  .dark .apple-chat-input {
+    background: #2C2C2E;
+    border-color: #48484A;
+    color: #FFFFFF;
+  }
+
+  .dark .apple-chat-input:focus {
+    border-color: #007AFF;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+  }
+
+  /* Apple Messages Send Button */
+  .apple-send-button {
+    background: #4A90E2;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+    flex-shrink: 0;
+  }
+
+  .apple-send-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+  }
+
+  .apple-send-button:active {
+    transform: scale(0.95);
+  }
+
+  .apple-send-button:disabled {
+    background: #C7C7CC;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .dark .apple-send-button:disabled {
+    background: #48484A;
+  }
+
+  /* Apple Messages Chat Container */
+  .apple-chat-container {
+    background: linear-gradient(to bottom, #FFFFFF 0%, #F7F7F7 100%);
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .dark .apple-chat-container {
+    background: linear-gradient(to bottom, #000000 0%, #1C1C1E 100%);
+  }
+
+  /* Apple Messages Header */
+  .apple-chat-header {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 12px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .dark .apple-chat-header {
+    background: rgba(28, 28, 30, 0.95);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Apple Messages Agent List Cards */
+  .apple-agent-card {
+    background: #FFFFFF;
+    border: none;
+    border-radius: 0;
+    padding: 20px 16px;
+    margin: 0;
+    box-shadow: none;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    width: 100%;
+    display: block;
+    min-height: 80px;
+  }
+
+  /* 태블릿 가로 모드 (768px - 1023px) */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .apple-agent-card {
+      padding: 20px 24px;
+      min-height: 90px;
+    }
+  }
+
+  /* 아이패드 세로 모드 (768px - 834px) - 카카오톡 스타일 */
+  @media (min-width: 768px) and (max-width: 834px) and (orientation: portrait) {
+    .apple-agent-card {
+      padding: 24px 28px;
+      min-height: 100px;
+      border-radius: 8px;
+      margin: 4px 0;
+      border-bottom: none;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .apple-agent-card:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .apple-agent-card.active {
+      box-shadow: 0 3px 12px rgba(0, 122, 255, 0.2) !important;
+      border: 1px solid rgba(0, 122, 255, 0.3);
+    }
+  }
+
+  /* 데스크톱 (1024px+) */
+  @media (min-width: 1024px) {
+    .apple-agent-card {
+      padding: 20px 32px;
+    }
+  }
+
+  .apple-agent-card:hover {
+    background: #F5F5F5;
+  }
+
+  .apple-agent-card:active {
+    background: #EBEBEB;
+  }
+
+  .dark .apple-agent-card {
+    background: #2C2C2E;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .dark .apple-agent-card:hover {
+    background: #3A3A3C;
+  }
+
+  .dark .apple-agent-card:active {
+    background: #48484A;
+  }
+
+  /* Active/Selected state for current chat */
+  .apple-agent-card.active {
+    background: #E8F4FD !important;
+  }
+
+  .dark .apple-agent-card.active {
+    background: #1D3A52 !important;
+  }
+
+  /* Apple Messages Navigation Tabs */
+  .apple-nav-tabs {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 4px;
+    display: flex;
+    margin-bottom: 16px;
+    border: 1px solid #E5E5E7;
+  }
+
+  .dark .apple-nav-tabs {
+    background: #1C1C1E;
+    border-color: #48484A;
+  }
+
+  .apple-nav-tab {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    color: #007AFF;
+    background: transparent;
+  }
+
+  .apple-nav-tab.active {
+    background: #007AFF;
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+  }
+
+  .dark .apple-nav-tab {
+    color: #007AFF;
+  }
+
+  .dark .apple-nav-tab.active {
+    background: #007AFF;
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.4);
+  }
+
+  /* Apple Messages Input Container */
+  .apple-input-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 8px 12px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    z-index: 100;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .fixed-chat-input {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100vw;
+  }
+
+  .chat-input-area {
+    position: relative;
+    margin-top: auto;
+  }
+
+  @media (min-width: 768px) {
+    .apple-input-container {
+      padding: 16px 24px;
+      gap: 16px;
+    }
+    
+    .chat-input-area .apple-input-container {
+      padding: 16px 48px;
+      gap: 16px;
+    }
+  }
+
+  .dark .apple-input-container {
+    background: rgba(28, 28, 30, 0.95);
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Apple Messages Button Styling */
+  .apple-button {
+    background: #007AFF;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 122, 255, 0.3);
+  }
+
+  .apple-button:hover {
+    background: #0051D5;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 122, 255, 0.4);
+  }
+
+  .apple-button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 122, 255, 0.3);
+  }
+
+  .apple-button.secondary {
+    background: #F2F2F7;
+    color: #007AFF;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .apple-button.secondary:hover {
+    background: #E5E5EA;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+
+  .dark .apple-button.secondary {
+    background: #2C2C2E;
+    color: #007AFF;
+  }
+
+  .dark .apple-button.secondary:hover {
+    background: #48484A;
+  }
+
+  /* Apple Messages Category Badges */
+  .apple-category-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .apple-category-badge.school {
+    background: rgba(0, 122, 255, 0.1);
+    color: #007AFF;
+  }
+
+  .apple-category-badge.professor {
+    background: rgba(142, 142, 147, 0.1);
+    color: #8E8E93;
+  }
+
+  .apple-category-badge.student {
+    background: rgba(52, 199, 89, 0.1);
+    color: #34C759;
+  }
+
+  .apple-category-badge.group {
+    background: rgba(175, 82, 222, 0.1);
+    color: #AF52DE;
+  }
+
+  .apple-category-badge.feature {
+    background: rgba(255, 149, 0, 0.1);
+    color: #FF9500;
+  }
+
+  .dark .apple-category-badge.school {
+    background: rgba(0, 122, 255, 0.2);
+  }
+
+  .dark .apple-category-badge.professor {
+    background: rgba(142, 142, 147, 0.2);
+  }
+
+  .dark .apple-category-badge.student {
+    background: rgba(52, 199, 89, 0.2);
+  }
+
+  .dark .apple-category-badge.group {
+    background: rgba(175, 82, 222, 0.2);
+  }
+
+  .dark .apple-category-badge.feature {
+    background: rgba(255, 149, 0, 0.2);
+  }
+
+  /* Agent category badges */
+  .category-badge {
+    @apply text-xs px-2 py-1 rounded-full;
+  }
+
+  .category-badge.school {
+    @apply bg-blue-100 text-blue-600;
+  }
+
+  .category-badge.professor {
+    @apply bg-gray-100 text-gray-600;
+  }
+
+  .category-badge.student {
+    @apply bg-green-100 text-green-600;
+  }
+
+  .category-badge.group {
+    @apply bg-purple-100 text-purple-600;
+  }
+
+  .category-badge.feature {
+    @apply bg-orange-100 text-orange-600;
+  }
+
+  /* Floating action button */
+  .fab {
+    @apply fixed bottom-6 right-6 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-lg flex items-center justify-center z-50;
+    @apply hover:bg-primary/90 transition-colors;
+  }
+
+  /* Korean typography */
+  .korean-text {
+    font-family: 'Noto Sans KR', sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  /* Force left alignment for all message elements */
+  .message-container {
+    text-align: left !important;
+    white-space: nowrap !important;
+  }
+  
+  .message-container.long-text {
+    white-space: normal !important;
+    word-break: keep-all !important;
+  }
+
+  /* Status indicators */
+  .status-online {
+    @apply w-3 h-3 bg-green-500 rounded-full;
+  }
+
+  .status-away {
+    @apply w-3 h-3 bg-yellow-500 rounded-full;
+  }
+
+  .status-offline {
+    @apply w-3 h-3 bg-gray-400 rounded-full;
+  }
+
+  /* Notification badge */
+  .notification-badge {
+    @apply w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center;
+    @apply min-w-[1.25rem] px-1;
+  }
+
+  /* System message styling with text alignment reset */
+  .system-message {
+    @apply bg-amber-50 border border-amber-200 text-amber-800;
+    @apply dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-300;
+    @apply shadow-sm;
+    text-align: start !important;
+    direction: ltr !important;
+  }
+
+  /* Chat interface layout - Mobile first */
+  .chat-interface-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: transparent;
+    overflow: hidden;
+  }
+  
+  .chat-interface-header {
+    flex-shrink: 0;
+  }
+  
+  .chat-interface-messages {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Prevent welcome message layout shifts */
+  .chat-interface-messages > div {
+    flex-shrink: 0;
+  }
+
+  .chat-input-area {
+    flex-shrink: 0;
+  }
+
+  /* Tab navigation full width and size */
+  .tab-navigation {
+    width: 100% !important;
+    min-height: 56px !important;
+  }
+
+  .tab-navigation .grid {
+    width: 100% !important;
+    gap: 4px !important;
+  }
+
+  .tab-navigation button {
+    width: 100% !important;
+    min-height: 56px !important;
+    font-size: 16px !important;
+    font-weight: 500 !important;
+  }
+
+  @media (min-width: 768px) {
+    .tab-navigation button {
+      min-height: 64px !important;
+      font-size: 18px !important;
+    }
+  }
+
+  /* Dialog z-index overrides for account settings modal */
+  [data-radix-popper-content-wrapper] {
+    z-index: 9999 !important;
+  }
+  
+  [role="dialog"] {
+    z-index: 9999 !important;
+  }
+  
+  .radix-dialog-overlay {
+    z-index: 9998 !important;
+  }
+  
+  [data-state="open"][data-radix-dialog-overlay] {
+    z-index: 9998 !important;
+  }
+  
+  [data-state="open"][data-radix-dialog-content] {
+    z-index: 9999 !important;
+  }
+
+  /* Ensure all dialog components have highest z-index */
+  [data-radix-dialog-content] {
+    z-index: 9999 !important;
+  }
+  
+  [data-radix-dialog-overlay] {
+    z-index: 9998 !important;
+  }
+  
+  /* Override any conflicting z-index from dropdown menus */
+  [data-radix-dropdown-content] {
+    z-index: 50 !important;
+  }
+
+  /* Search bar full width styling */
+  .search-container {
+    flex: 1 !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .search-input {
+    width: 100% !important;
+  }
+
+  /* Fixed header and input positioning */
+  @media (max-width: 767px) {
+    .chat-page-container {
+      position: relative;
+      min-height: 100vh;
+    }
+    
+    .mobile-chat-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: var(--background);
+      border-bottom: 1px solid var(--border);
+      z-index: 1000;
+    }
+    
+    .mobile-messages-container {
+      padding: 80px 0 140px 0; /* 상단 60px + 여유 20px, 하단 120px + 여유 20px */
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      min-height: calc(100vh - 140px);
+    }
+    
+    /* Welcome message specific padding for mobile */
+    .mobile-messages-container .text-center {
+      padding-top: 40px !important;
+      padding-bottom: 40px !important;
+    }
+    
+    .fixed-chat-input {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      min-height: 80px;
+      background: var(--background);
+      border-top: 1px solid var(--border);
+      z-index: 1000;
+      padding: 16px;
+    }
+  }
+
+  /* Responsive tablet adjustments */
+  @media (min-width: 768px) {
+    .mobile-container {
+      min-height: auto;
+    }
+    
+    .chat-container {
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+    
+    .fixed-header {
+      position: static !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    
+    .main-content {
+      padding-top: 0;
+    }
+    
+    .chat-messages {
+      padding-top: 1rem !important;
+      padding-bottom: 1rem !important;
+    }
+    
+    /* Tablet message input should not be fixed */
+    .tablet-message-input {
+      position: relative !important;
+      bottom: auto !important;
+      left: auto !important;
+      right: auto !important;
+    }
+    
+    /* Prevent layout flash on tablet by applying styles immediately */
+    .chat-interface-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+    }
+    
+    .chat-interface-header {
+      position: static;
+      background: transparent;
+      box-shadow: none;
+      flex-shrink: 0;
+    }
+    
+    .chat-interface-messages {
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+      flex: 1;
+      overflow-y: auto;
+    }
+  }
+
+  /* Fixed header styling */
+  .fixed-header {
+    @apply fixed top-0 left-0 right-0 z-40 border-b border-border bg-background;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  }
+
+  /* Main content with header padding */
+  .main-content {
+    padding-top: 9rem; /* Increased to account for header + tabs + search */
+    /* Ensure content stays below header */
+    position: relative;
+    z-index: 1;
+    /* Clip content to prevent overflow above header */
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    min-height: calc(100vh - 9rem);
+  }
+
+  /* Container with proper overflow handling */
+  .mobile-container {
+    @apply max-w-md mx-auto min-h-screen bg-background;
+    /* Ensure container doesn't allow content to escape */
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Create a solid mask above the content area */
+  .mobile-container::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 28rem; /* md breakpoint */
+    height: 9rem;
+    background: var(--background);
+    z-index: 40; /* Lower z-index to stay below modals */
+    pointer-events: none;
+  }
+
+  /* Chat container with proper scrolling */
+  .chat-container {
+    @apply h-screen flex flex-col;
+  }
+
+  .chat-messages {
+    @apply flex-1 overflow-y-auto;
+    /* Prevent content from going behind header */
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* Prevent scroll momentum on iOS */
+  .no-scroll-bounce {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Backdrop blur support */
+  .backdrop-blur-header {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  /* Dropdown menu z-index fix */
+  [data-radix-popper-content-wrapper] {
+    z-index: 99999 !important;
+  }
+
+  /* Ensure dropdown content appears above all elements */
+  .dropdown-content,
+  [role="menu"],
+  [data-state="open"][data-side] {
+    z-index: 99999 !important;
+    position: relative;
+  }
+
+  .system-message::before {
+    content: "⚙️";
+    @apply mr-2;
+  }
+
+  /* Loading animation */
+  .typing-indicator {
+    @apply flex space-x-1;
+  }
+
+  .typing-indicator span {
+    @apply w-2 h-2 bg-muted-foreground rounded-full animate-pulse;
+  }
+
+  .typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+/* Custom animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  .mobile-only {
+    display: block;
+  }
+  
+  .desktop-only {
+    display: none;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-only {
+    display: none;
+  }
+  
+  .desktop-only {
+    display: block;
+  }
+}
+
+/* Focus states for accessibility */
+.focus-visible {
+  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --border: hsl(240, 5.9%, 60%);
+    --muted: hsl(240, 4.8%, 85.9%);
+  }
+}
+
+/* Tab navigation force single row layout */
+.tab-navigation {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 0 !important;
+  width: 100% !important;
+}
+
+.tab-navigation button {
+  width: 100% !important;
+  min-width: 0 !important;
+  flex: none !important;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .animate-pulse {
+    animation: none;
+  }
+}
+
+/* Chat messages container for proper bottom alignment like KakaoTalk */
+.chat-interface-messages {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: calc(100vh - 220px);
+}
+
+.messages-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 40px;
+  min-height: auto;
+  justify-content: flex-end;
+}
+
+/* Ensure last message sits at bottom on mobile */
+@media (max-width: 768px) {
+  .chat-interface-messages {
+    min-height: calc(100vh - 260px);
+    justify-content: flex-end;
+  }
+  
+  .messages-container {
+    padding-bottom: 50px;
+  }
+}
+
+/* 아이패드 세로 모드를 위한 반응형 디자인 */
+@media (min-width: 768px) and (max-width: 834px) and (orientation: portrait) {
+  .responsive-agent-grid {
+    padding: 0 32px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .apple-agent-card {
+    padding: 24px 28px;
+    margin: 4px 0;
+  }
+
+  .mobile-container {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+}
+}

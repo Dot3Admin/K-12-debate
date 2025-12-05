@@ -1,0 +1,1246 @@
+import OpenAI from "openai";
+import * as mammoth from "mammoth";
+import * as fs from "fs";
+import * as path from "path";
+import { 
+  selectGreetingTemplate, 
+  selectTransitionTemplate, 
+  buildDynamicSystemPrompt,
+  analyzeResponseSimilarity,
+  generateAlternativeResponse,
+  cleanupResponse 
+} from "./chatTemplates";
+
+// 전공별 차별화된 temperature 설정
+function getAgentTemperature(agentName: string, agentDescription: string): number {
+  const lowerName = agentName.toLowerCase();
+  const lowerDesc = agentDescription.toLowerCase();
+  
+  // MSE (재료공학) - 신중하고 정확함
+  if (lowerName.includes('mse') || lowerDesc.includes('재료') || lowerDesc.includes('소재')) {
+    return 0.6;
+  }
+  // CSE (컴퓨터공학) - 논리적이고 활발함  
+  if (lowerName.includes('cse') || lowerDesc.includes('컴퓨터') || lowerDesc.includes('프로그래밍')) {
+    return 0.9;
+  }
+  // EE (전기전자) - 체계적이고 안정적
+  if (lowerName.includes('ee') || lowerDesc.includes('전기') || lowerDesc.includes('전자')) {
+    return 0.7;
+  }
+  // 생명과학 - 탐구적이고 유연함
+  if (lowerDesc.includes('생명') || lowerDesc.includes('바이오') || lowerDesc.includes('생물')) {
+    return 0.85;
+  }
+  // 화학 - 정밀하고 체계적
+  if (lowerDesc.includes('화학')) {
+    return 0.65;
+  }
+  // 물리 - 논리적이고 원리 중심
+  if (lowerDesc.includes('물리')) {
+    return 0.75;
+  }
+  // 경영 - 실용적이고 유연함
+  if (lowerDesc.includes('경영') || lowerDesc.includes('비즈니스')) {
+    return 0.8;
+  }
+  // 교육 - 친근하고 소통 중심
+  if (lowerDesc.includes('교육')) {
+    return 0.85;
+  }
+  
+  // 기본값
+  return 0.8;
+}
+
+// 기관명 자동 교정 함수
+function correctInstitutionNames(response: string): string {
+  return response
+    .replace(/입학처/g, '교무처 학사팀')
+    .replace(/SNS\s*등?/g, '학사공지/학사요람')
+    .replace(/입학처[\s]*[\,\.]?[\s]*SNS/g, '교무처 학사팀, 학사공지');
+}
+
+// 완결성 검사 함수 (자연스러운 문장 종료 확인)
+function checkCompletenessGuard(response: string): boolean {
+  // 너무 짧거나 명백히 중간에 끊어진 응답만 체크
+  const isTooShort = response.trim().length < 20;
+  const endsAbruptly = response.match(/[가-힣a-zA-Z]$/m); // 문자로 끝나는 경우 (미완성)
+  const hasStrangeEnding = response.match(/(따른조|하는데에|이에요요|니다다|해요요|죠죠|네네|어요요)$/);
+  
+  return !isTooShort && !endsAbruptly && !hasStrangeEnding;
+}
+
+// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+const openai = new OpenAI({ 
+  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || ""
+});
+
+export interface ChatResponse {
+  message: string;
+  usedDocuments?: string[];
+  triggerAction?: string;
+}
+
+export interface DocumentAnalysis {
+  summary: string;
+  keyPoints: string[];
+  extractedText: string;
+}
+
+export async function analyzeDocument(content: string, filename: string): Promise<DocumentAnalysis> {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "당신은 문서 분석 전문가입니다. 주어진 문서를 분석하여 요약, 주요 포인트, 전체 텍스트를 추출하세요. 응답은 JSON 형식으로 해주세요.",
+        },
+        {
+          role: "user",
+          content: `다음 문서를 분석해주세요. 파일명: ${filename}\n\n내용:\n${content}`,
+        },
+      ],
+      response_format: { type: "json_object" },
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    
+    return {
+      summary: result.summary || "문서 요약이 생성되지 않았습니다.",
+      keyPoints: result.keyPoints || [],
+      extractedText: content,
+    };
+  } catch (error) {
+    console.error("Document analysis failed:", error);
+    return {
+      summary: "문서 분석 중 오류가 발생했습니다.",
+      keyPoints: [],
+      extractedText: content,
+    };
+  }
+}
+
+export async function generateManagementResponse(
+  userMessage: string,
+  agentName: string,
+  agentDescription: string,
+  conversationHistory: Array<{ role: "user" | "assistant"; content: string }>,
+  availableDocuments: Array<{ filename: string; content: string }>,
+  chatbotType: string = "general-llm",
+  speechStyle: string = "친근하고 도움이 되는 말투",
+  personality: string = "친절하고 전문적인 성격으로 정확한 정보를 제공",
+  additionalPrompt: string = "",
+  userLanguage: string = "ko",
+  conversationId?: number
+): Promise<ChatResponse> {
+  // Check if we need to translate Korean text to English
+  if (userLanguage === "en" && containsKorean(userMessage)) {
+    console.log("Korean text detected in English mode (management), translating...");
+    userMessage = await translateKoreanToEnglish(userMessage);
+    console.log("Translated management message:", userMessage);
+  }
+
+  const lowerMessage = userMessage.toLowerCase();
+  
+  // Check for management commands with typo tolerance
+  if (lowerMessage.includes("페르소나") || lowerMessage.includes("persona") || lowerMessage.includes("성격") || 
+      lowerMessage.includes("말투") || lowerMessage.includes("캐릭터") || lowerMessage.includes("개성") ||
+      lowerMessage.includes("닉네임") || lowerMessage.includes("특성") || lowerMessage.includes("변경") ||
+      lowerMessage.includes("수정") || lowerMessage.includes("편집")) {
+    const personaMessage = userLanguage === "en" 
+      ? "🔧 Persona editing window opened. You can modify nickname, speaking style, knowledge domain, personality traits, and prohibited word response."
+      : "🔧 페르소나 편집 창을 열었습니다. 닉네임, 말투 스타일, 지식 분야, 성격 특성, 금칙어 반응 방식을 수정할 수 있습니다.";
+    return {
+      message: personaMessage,
+      usedDocuments: [],
+      triggerAction: "openPersonaModal"
+    };
+  }
+  
+  if (lowerMessage.includes("챗봇") || lowerMessage.includes("설정") || lowerMessage.includes("모델") ||
+      lowerMessage.includes("llm") || lowerMessage.includes("gpt") || lowerMessage.includes("ai설정") ||
+      lowerMessage.includes("봇설정") || lowerMessage.includes("동작") || lowerMessage.includes("유형")) {
+    const settingsMessage = userLanguage === "en" 
+      ? "🔧 Chatbot settings window opened. You can change LLM model and chatbot type."
+      : "🔧 챗봇 설정 창을 열었습니다. LLM 모델과 챗봇 유형을 변경할 수 있습니다.";
+    return {
+      message: settingsMessage,
+      usedDocuments: [],
+      triggerAction: "openSettingsModal"
+    };
+  }
+  
+  if (lowerMessage.includes("문서") || lowerMessage.includes("업로드") || lowerMessage.includes("파일") ||
+      lowerMessage.includes("자료") || lowerMessage.includes("첨부") || lowerMessage.includes("지식") ||
+      lowerMessage.includes("학습") || lowerMessage.includes("데이터") || lowerMessage.includes("정보")) {
+    const fileMessage = userLanguage === "en" 
+      ? "🔧 Document upload window opened. You can upload TXT, DOC, DOCX, PPT, PPTX format documents to expand the agent's knowledge base."
+      : "🔧 문서 업로드 창을 열었습니다. TXT, DOC, DOCX, PPT, PPTX 형식의 문서를 업로드하여 에이전트의 지식베이스를 확장할 수 있습니다.";
+    return {
+      message: fileMessage,
+      usedDocuments: [],
+      triggerAction: "openFileModal"
+    };
+  }
+  
+  if (lowerMessage.includes("알림") || lowerMessage.includes("notification") || lowerMessage.includes("브로드캐스트") ||
+      lowerMessage.includes("공지") || lowerMessage.includes("메시지") || lowerMessage.includes("전송") ||
+      lowerMessage.includes("안내") || lowerMessage.includes("소식")) {
+    const notificationMessage = userLanguage === "en" 
+      ? "🔧 Notification function started. Enter notification content. It will be sent to all users."
+      : "🔧 알림 기능을 시작합니다. 알림 내용을 입력하세요. 모든 사용자에게 전송됩니다.";
+    return {
+      message: notificationMessage,
+      usedDocuments: [],
+      triggerAction: "startNotification"
+    };
+  }
+  
+  if (lowerMessage.includes("도움말") || lowerMessage.includes("명령어") || lowerMessage.includes("기능") || 
+      lowerMessage.includes("help") || lowerMessage.includes("사용법") || lowerMessage.includes("메뉴") ||
+      lowerMessage.includes("옵션") || lowerMessage.includes("가이드")) {
+    const helpMessage = userLanguage === "en" 
+      ? `🔧 Agent Management Commands:
+
+📝 Main Features:
+• "persona" / "personality" / "style" - Set agent personality and speaking style
+• "chatbot settings" / "model" / "AI settings" - Change LLM model and operation mode
+• "document upload" / "file" / "data" - Add documents to expand knowledge base
+• "notification" / "announcement" / "message" - Send announcements to users
+• "performance analysis" / "statistics" / "status" - View agent usage statistics and analysis
+
+💡 Usage: Send a message containing the above keywords to execute the function.
+General conversation is also always possible!`
+      : `🔧 에이전트 관리 명령어:
+
+📝 주요 기능:
+• "페르소나" / "성격" / "말투" - 에이전트 성격 및 말투 설정
+• "챗봇 설정" / "모델" / "AI설정" - LLM 모델 및 동작 방식 변경  
+• "문서 업로드" / "파일" / "자료" - 지식베이스 확장용 문서 추가
+• "알림보내기" / "공지" / "메시지" - 사용자들에게 공지사항 전송
+• "성과 분석" / "통계" / "현황" - 에이전트 사용 통계 및 분석
+
+💡 사용법: 위 키워드가 포함된 메시지를 보내면 해당 기능이 실행됩니다.
+일반 대화도 언제든 가능합니다!`;
+    return {
+      message: helpMessage,
+      usedDocuments: []
+    };
+  }
+  
+  // For regular messages in management mode, use normal chat response
+  return generateChatResponse(
+    userMessage,
+    agentName,
+    agentDescription,
+    conversationHistory,
+    availableDocuments,
+    chatbotType,
+    speechStyle,
+    personality,
+    additionalPrompt,
+    userLanguage,
+    conversationId
+  );
+}
+
+// Function to detect Korean text
+function containsKorean(text: string): boolean {
+  const koreanRegex = /[\u3131-\u318E\u3200-\u321E\u3260-\u327E\uAC00-\uD7A3]/;
+  return koreanRegex.test(text);
+}
+
+// Function to translate Korean text to English
+async function translateKoreanToEnglish(text: string): Promise<string> {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are a professional Korean to English translator. Translate the given Korean text to natural, fluent English. Only return the translated text without any additional comments or explanations."
+        },
+        {
+          role: "user",
+          content: text
+        }
+      ],
+      max_tokens: 1000,
+      temperature: 0.1,
+    });
+
+    return response.choices[0].message.content || text;
+  } catch (error) {
+    console.error("Translation failed:", error);
+    return text; // Return original text if translation fails
+  }
+}
+
+export async function generateChatResponse(
+  userMessage: string,
+  agentName: string,
+  agentDescription: string,
+  conversationHistory: Array<{ role: "user" | "assistant"; content: string }>,
+  availableDocuments: Array<{ filename: string; content: string }> = [],
+  chatbotType: string = "general-llm",
+  speechStyle: string = "친근하고 도움이 되는 말투",
+  personality: string = "친절하고 전문적인 성격으로 정확한 정보를 제공",
+  additionalPrompt: string = "",
+  userLanguage: string = "ko",
+  conversationId?: number
+): Promise<ChatResponse> {
+  try {
+    // Debug log to check if persona parameters are received
+    console.log("OpenAI persona parameters:", {
+      speechStyle,
+      personality,
+      chatbotType
+    });
+
+    // Check if we need to translate Korean text to English
+    if (userLanguage === "en" && containsKorean(userMessage)) {
+      console.log("Korean text detected in English mode, translating...");
+      userMessage = await translateKoreanToEnglish(userMessage);
+      console.log("Translated message:", userMessage);
+    }
+
+    // Translate agent name and description to English if needed
+    if (userLanguage === "en") {
+      if (containsKorean(agentName)) {
+        agentName = await translateKoreanToEnglish(agentName);
+      }
+      if (containsKorean(agentDescription)) {
+        agentDescription = await translateKoreanToEnglish(agentDescription);
+      }
+      if (containsKorean(speechStyle)) {
+        speechStyle = await translateKoreanToEnglish(speechStyle);
+      }
+      if (containsKorean(personality)) {
+        personality = await translateKoreanToEnglish(personality);
+      }
+    }
+
+    // Translate conversation history to English if needed
+    if (userLanguage === "en") {
+      for (let i = 0; i < conversationHistory.length; i++) {
+        if (containsKorean(conversationHistory[i].content)) {
+          conversationHistory[i].content = await translateKoreanToEnglish(conversationHistory[i].content);
+        }
+      }
+    }
+
+    // Prepare context from documents with enhanced processing
+    let documentContext = "";
+    if (availableDocuments.length > 0) {
+      if (userLanguage === "en") {
+        // Translate Korean document content to English
+        const translatedDocs = [];
+        for (const doc of availableDocuments) {
+          let translatedContent = doc.content;
+          if (containsKorean(doc.content)) {
+            translatedContent = await translateKoreanToEnglish(doc.content);
+          }
+          translatedDocs.push({
+            filename: doc.filename,
+            content: translatedContent
+          });
+        }
+        documentContext = `\n\nReference Documents:\n${translatedDocs.map(doc => 
+          `[Document: ${doc.filename}]\n${doc.content}`
+        ).join('\n\n')}`;
+      } else {
+        documentContext = `\n\n참고 문서:\n${availableDocuments.map(doc => 
+          `[문서명: ${doc.filename}]\n${doc.content}`
+        ).join('\n\n')}`;
+      }
+    }
+
+    // Enhanced document analysis for better responses
+    const hasDocumentQuestion = userMessage.includes("문서") || userMessage.includes("내용") || 
+                               userMessage.includes("세계관") || userMessage.includes("파일") ||
+                               availableDocuments.some(doc => 
+                                 userMessage.includes(doc.filename.replace('.docx', '').replace('.pdf', ''))
+                               );
+
+    // Language mapping for responses
+    const languageInstructions = {
+      'ko': '한국어로 응답하세요.',
+      'en': 'Respond in English.',
+      'zh': '请用中文回复。',
+      'vi': 'Hãy trả lời bằng tiếng Việt.',
+      'ja': '日本語で応答してください。'
+    };
+    
+    const responseLanguage = languageInstructions[userLanguage as keyof typeof languageInstructions] || languageInstructions['ko'];
+    
+    // 에이전트 유형 결정 (speechStyle과 personality 기반)
+    let agentType: 'warm' | 'professional' | 'casual' | 'analytical' = 'professional';
+    
+    if (speechStyle.includes("친근") || speechStyle.includes("따뜻") || speechStyle.includes("친숙") || 
+        personality.includes("친근") || personality.includes("따뜻")) {
+      agentType = 'warm';
+    } else if (speechStyle.includes("캐주얼") || speechStyle.includes("편안") || speechStyle.includes("자유") ||
+               personality.includes("캐주얼") || personality.includes("편안")) {
+      agentType = 'casual';
+    } else if (speechStyle.includes("분석") || speechStyle.includes("논리") || speechStyle.includes("체계") ||
+               personality.includes("분석") || personality.includes("논리")) {
+      agentType = 'analytical';
+    }
+
+    // 이전 응답 가져오기 (유사도 검사용)
+    const recentResponses = conversationHistory
+      .filter(msg => msg.role === 'assistant')
+      .slice(-3)
+      .map(msg => msg.content);
+
+    // 대화 횟수 계산 (대화 다양성을 위해)
+    const conversationCount = conversationHistory.length;
+    
+    // 에이전트별 고유성을 위한 시드 생성 (agent name + current timestamp의 일부)
+    const agentSeed = agentName.charCodeAt(0) + agentName.length + (Date.now() % 1000);
+    
+    // 최근 챗봇 응답들과의 유사도 검사를 위한 컨텍스트
+    const existingResponses = recentResponses.join(' ').toLowerCase();
+    
+    console.log(`Generating response for ${agentName} with seed ${agentSeed}`);
+    
+    // 동적 시스템 프롬프트 생성
+    const systemPrompt = buildDynamicSystemPrompt(
+      agentName,
+      agentDescription,
+      speechStyle,
+      personality,
+      additionalPrompt,
+      agentType,
+      conversationCount,
+      agentSeed
+    );
+
+    // 언어별 프롬프트 추가
+    const languageInstruction = `응답은 반드시 ${responseLanguage}`;
+    
+    // 최종 시스템 프롬프트 구성
+    let finalSystemPrompt = "";
+    
+    switch (chatbotType) {
+      case "strict-doc":
+        if (availableDocuments.length === 0) {
+          const noDocMessages = {
+            'ko': "문서를 먼저 업로드해 주세요. 문서 기반으로만 답변할 수 있습니다.",
+            'en': "Please upload documents first. I can only answer based on documents.",
+            'zh': "请先上传文档。我只能基于文档回答问题。",
+            'vi': "Vui lòng tải tài liệu lên trước. Tôi chỉ có thể trả lời dựa trên tài liệu.",
+            'ja': "まず文書をアップロードしてください。文書に基づいてのみ回答できます。"
+          };
+          const noDocMessage = noDocMessages[userLanguage as keyof typeof noDocMessages] || noDocMessages['ko'];
+          return {
+            message: noDocMessage,
+            usedDocuments: []
+          };
+        }
+        
+        finalSystemPrompt = `${languageInstruction}
+
+${systemPrompt}
+
+DOCUMENT ANALYSIS MODE:
+- Only use document content to answer questions
+- Analyze documents deeply when asked about their content
+- Quote relevant sections when explaining document content
+- If asked about a specific document by name, focus on that document's content${documentContext}`;
+        break;
+
+      case "doc-fallback-llm":
+        finalSystemPrompt = `${languageInstruction}
+
+${systemPrompt}
+
+DOCUMENT ANALYSIS INSTRUCTIONS:
+- When documents are available, prioritize them for answers
+- Analyze document content thoroughly when asked about specific documents
+- Fall back to general knowledge only when documents don't contain relevant information
+
+Rules:
+- Use documents first when available, then general knowledge if needed
+- Analyze documents deeply when asked about their content
+- Stay true to your personality and speaking style
+- Provide helpful and accurate information
+
+CRITICAL FORMATTING RULES - ABSOLUTELY NO EXCEPTIONS:
+- NEVER use ANY markdown formatting: **bold**, *italic*, __underline__, ## headers, [links], backticks
+- NEVER use judgment keywords like "**같은**", "**다른**", "**동의**", "**반대**"
+- NEVER show internal decision-making processes or configuration values
+- Respond ONLY with natural conversational Korean text, no formatting symbols whatsoever
+- Speak as if you're having a normal conversation - no special formatting needed${documentContext}`;
+        break;
+
+      case "general-llm":
+      default:
+        // 사용자가 특정 구조화된 포맷을 요청했는지 감지
+        const requestedStructuredFormat = userMessage.match(/["']([^"']*[:]\s*[^"']*)+["']/) || 
+                                        userMessage.includes('판단/근거') || 
+                                        userMessage.includes('판단:') || 
+                                        userMessage.includes('근거:') || 
+                                        userMessage.includes('리스크:') || 
+                                        userMessage.includes('분석:') || 
+                                        userMessage.includes('결론:') || 
+                                        userMessage.includes('요약:') ||
+                                        userMessage.includes('포맷으로') ||
+                                        userMessage.includes('형식으로');
+        
+        // @멘션 과 특별 포맷 지침
+        const isMentionQuestion = userMessage.includes('@');
+        const mentionInstructions = isMentionQuestion ? 
+          `\n\n## @멘션 질문에 대한 특별 지침:\n- 이것은 @멘션 질문입니다. 질문 내용을 정확히 파악하고 그에 맞는 전문적인 답변을 제공해주세요\n- 최소 100자 이상의 의미 있는 답변을 작성해주세요\n- 질문의 핵심 키워드와 맥락을 반드시 고려하여 관련성 있는 답변을 해주세요\n- 전공 지식과 경험을 바탕으로 구체적이고 실용적인 조언을 제공해주세요\n- 단순한 인사말이나 형식적인 답변, 관련 없는 주제 언급을 절대 피해주세요\n- 질문자가 묻고 있는 구체적인 내용에만 집중해서 답변해주세요\n` : '';
+        
+        const formatInstructions = requestedStructuredFormat ? 
+          `\n\n## 특별 지침 - 사용자 요청 포맷 우선:\n- 사용자가 특정 구조화된 포맷(판단:, 근거:, 리스크: 등)을 요청한 경우, 해당 포맷을 정확히 따라주세요\n- 요청된 형식에 맞춰 구조화된 답변을 제공하되, 자연스럽고 유용한 내용으로 채워주세요\n- 사용자가 명시한 구체적인 포맷이 일반 대화 규칙보다 우선됩니다\n` : '';
+        
+        finalSystemPrompt = `${languageInstruction}
+
+${systemPrompt}${mentionInstructions}${formatInstructions}
+
+${documentContext ? `
+
+참고 문서 정보:
+${documentContext}` : ''}
+
+## 자연스럽고 개성 있는 응답 지침:
+- 3-4문장 정도의 간결한 답변을 기본으로 하세요
+- "도와드릴까요", "궁금한 점이 있으면" 같은 획일적 표현 금지
+- 각자의 전공 특성을 살린 독특한 말투와 관점 사용
+- 길고 형식적인 설명보다는 짧고 핵심적인 조언
+- 불확실한 정보는 "확실하지 않지만..." 정도로 간단히 표현
+        break;
+    }
+
+    console.log("Final system prompt:", finalSystemPrompt);
+
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      { role: "system", content: finalSystemPrompt },
+      ...conversationHistory.slice(-10), // Keep last 10 messages for context
+      { role: "user", content: userMessage },
+    ];
+
+    // Apply grumpy speaking style but still provide proper answers
+    if (speechStyle && (speechStyle.includes("투덜이") || speechStyle.includes("스머프"))) {
+      console.log("APPLYING GRUMPY SMURF STYLE WITH PROPER ANSWERS");
+      
+      const grumpyExamples = {
+        'ko': {
+          start: '"아...", "에휴...", "하..."',
+          examples: [
+            '"아... 또 그런 걸 물어보네. [actual answer here] 이제 됐지?"',
+            '"에휴... 그것도 모르고. [actual answer here] 다음엔 좀 알아서 찾아봐."',
+            '"하... 귀찮게. [actual answer here] 이런 건 상식이라구."'
+          ]
+        },
+        'en': {
+          start: '"Ugh...", "Sigh...", "Oh no..."',
+          examples: [
+            '"Ugh... asking that again. [actual answer here] There, happy now?"',
+            '"Sigh... don\'t you know that? [actual answer here] Look it up yourself next time."',
+            '"Oh no... so annoying. [actual answer here] This is basic stuff."'
+          ]
+        },
+        'ja': {
+          start: '"あ...", "はぁ...", "やれやれ..."',
+          examples: [
+            '"あ... またそんなこと聞くのか。[actual answer here] これでいいだろう？"',
+            '"はぁ... そんなことも知らないのか。[actual answer here] 今度は自分で調べろよ。"',
+            '"やれやれ... 面倒だな。[actual answer here] こんなの常識だろ。"'
+          ]
+        },
+        'zh': {
+          start: '"哎...", "唉...", "真是..."',
+          examples: [
+            '"哎... 又问这种问题。[actual answer here] 现在满意了吧？"',
+            '"唉... 这都不知道。[actual answer here] 下次自己去查。"',
+            '"真是... 麻烦。[actual answer here] 这是常识好吗。"'
+          ]
+        },
+        'vi': {
+          start: '"Ôi...", "Thở dài...", "Trời ơi..."',
+          examples: [
+            '"Ôi... lại hỏi thế. [actual answer here] Giờ được chưa?"',
+            '"Thở dài... cái đó cũng không biết. [actual answer here] Lần sau tự tìm hiểu đi."',
+            '"Trời ơi... phiền quá. [actual answer here] Đây là kiến thức cơ bản mà."'
+          ]
+        }
+      };
+      
+      const grumpyLang = grumpyExamples[userLanguage as keyof typeof grumpyExamples] || grumpyExamples['ko'];
+      
+      // Use OpenAI to get the actual answer but modify the system prompt for grumpy tone  
+      let grumpyPrompt = languageInstruction + "\n\nYou are " + agentName + ". You MUST respond in a grumpy, annoyed tone but still provide helpful answers.\n\n";
+      grumpyPrompt += "CRITICAL FORMATTING RULES - ABSOLUTELY NO EXCEPTIONS:\n";
+      grumpyPrompt += "- NEVER use ANY markdown formatting: **bold**, *italic*, __underline__, ## headers, [links], backticks\n";
+      grumpyPrompt += "- NEVER include role labels like \"RESEARCHER\", \"PLANNER\", \"DESIGNER\" in your output\n";
+      grumpyPrompt += "- NEVER include meta-commentary like \"종합 의견\", \"Assignment:\", \"Checklist:\" in your responses\n";
+      grumpyPrompt += "- NEVER use judgment keywords like \"**같은**\", \"**다른**\", \"**동의**\", \"**반대**\"\n";
+      grumpyPrompt += "- Respond ONLY with natural conversational Korean text, no formatting symbols whatsoever\n";
+      grumpyPrompt += "\nCRITICAL SPEAKING STYLE: Always sound like a grumpy, irritated character who complains but still helps.\n\n";
+      grumpyPrompt += "Response format:\n";
+      grumpyPrompt += "1. Start with a grumpy complaint: " + grumpyLang.start + "\n";
+      grumpyPrompt += "2. Provide the actual helpful answer\n";
+      grumpyPrompt += "3. End with an annoyed comment\n\n";
+      grumpyPrompt += "Examples:\n";
+      grumpyPrompt += grumpyLang.examples.map((ex: string) => "- " + ex).join('\n') + "\n\n";
+      grumpyPrompt += "Rules:\n";
+      grumpyPrompt += "- Always be grumpy but informative\n";
+      grumpyPrompt += "- Provide complete, accurate answers\n";
+      grumpyPrompt += "- Keep the annoyed, bothered tone throughout\n";
+      grumpyPrompt += "- Respond in plain text without any markdown or formatting symbols\n";
+      grumpyPrompt += documentContext;
+      
+      finalSystemPrompt = grumpyPrompt;
+    }
+
+    // Increase token limit to prevent response truncation (increased per user request)
+    const maxTokens = hasDocumentQuestion ? 1200 : 800; // 600-800 range to prevent cutoff
+    
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages,
+      max_tokens: maxTokens,
+      temperature: getAgentTemperature(agentName, agentDescription),
+      seed: agentSeed
+    });
+
+    const errorMessages = {
+      'ko': "죄송합니다. 응답을 생성할 수 없습니다.",
+      'en': "Sorry, I couldn't generate a response.",
+      'zh': "抱歉，无法生成回复。",
+      'vi': "Xin lỗi, không thể tạo phản hồi.",
+      'ja': "申し訳ありませんが、応答を生成できませんでした。"
+    };
+    
+    let assistantMessage = response.choices[0].message.content || errorMessages[userLanguage as keyof typeof errorMessages] || errorMessages['ko'];
+    
+    // 기관명 자동 교정 적용
+    assistantMessage = correctInstitutionNames(assistantMessage);
+    
+    // @멘션 질문의 경우 더 높은 기준 적용 (더 긴 응답 보장)
+    const isMentionQuestion = userMessage.includes('@');
+    const minLength = isMentionQuestion ? 120 : 80; // @멘션의 경우 120자, 일반 80자 이상
+    
+    // 완결성 가드 체크 (자연스러운 완성도만 확인)
+    const hasCompletenessGuard = checkCompletenessGuard(assistantMessage);
+    
+    // 응답 완성도 검사 (매우 완화된 버전 - 명백한 오류만)
+    const isIncompleteResponse = 
+      assistantMessage.trim().length < 30 || // 너무 짧은 응답만 (30자 미만)
+      !hasCompletenessGuard || // 명백히 미완성인 응답만
+      // 매우 명백히 이상한 어미만 감지
+      assistantMessage.match(/(활용해조|설계조|개발해조|연구해조|도움해조|따른조|하는데에|이에요요|니다다)$/m);
+    
+    if (isIncompleteResponse) {
+      // 이상한 단어/어미 감지 시 별도 로그
+      const hasStrangeWordsLocal = assistantMessage.match(/(첫실|메러치|리스크실|시안실|업실|작실|험실|전실|구실|절실|개실|설실|체실|급실|정실|용실|조실|획실|뽐실|실험실을|실을|실이|실에|실의)/g);
+      const hasStrangeEndingsLocal = assistantMessage.match(/(기를보아요|나기도요|거예아야|아에오|보아요|도요|예아야|들어보셔요|풀어보셔요|찾아보셔요|나다이|니다아|에요아|죠아|네요아|습니다아|나기|도기|예아|러치|보오|셔요오|다이아|습니다오|리스크을|메러치을)/g);
+      if (hasStrangeWordsLocal) {
+        console.log('[' + agentName + '] 이상한 단어 감지, 응답 재생성: ' + hasStrangeWordsLocal.join(', '));
+      }
+      if (hasStrangeEndingsLocal) {
+        console.log('[' + agentName + '] 이상한 어미 감지, 응답 재생성: ' + hasStrangeEndingsLocal.join(', '));
+      }
+      console.log('[' + agentName + '] 불완전한 응답 감지, 재생성 시도');
+      
+      // 더 높은 토큰 수로 재생성
+      try {
+        const retryResponse = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages,
+          max_tokens: maxTokens + 400, // 추가 토큰으로 완전한 응답 보장
+          temperature: 0.85 + (agentSeed % 100) / 1000,
+          seed: agentSeed + 1
+        });
+        
+        const retryMessage = retryResponse.choices[0].message.content;
+        if (retryMessage && retryMessage.trim().length > assistantMessage.trim().length) {
+          assistantMessage = retryMessage;
+          console.log('[' + agentName + '] 응답 재생성 성공');
+        }
+      } catch (retryError) {
+        console.log('[' + agentName + '] 응답 재생성 실패, 원본 사용:', retryError);
+      }
+    }
+    
+    // 고급 응답 품질 검사: 유사도 분석 및 즉시 재작성 (더 엄격한 기준)
+    const similarityAnalysis = analyzeResponseSimilarity(assistantMessage, recentResponses);
+    console.log('[' + agentName + '] 응답 유사도: ' + similarityAnalysis.similarity.toFixed(2) + ', 패턴: ' + similarityAnalysis.patterns.length + '개');
+    
+    // 중복 감지 기준 완화 (0.95 이상이거나 심각한 패턴 감지되면 재작성)
+    if (similarityAnalysis.needsRewrite || similarityAnalysis.similarity > 0.95) {
+      console.log(`[${agentName}] 획일적 패턴 감지, 즉시 재작성 실행:`, similarityAnalysis.patterns);
+      
+      // 에이전트별 고유성 강화된 재작성
+      assistantMessage = generateAlternativeResponse(
+        assistantMessage,
+        similarityAnalysis.patterns,
+        agentName,
+        agentType,
+        agentSeed // 에이전트별 고유성을 위한 시드 전달
+      );
+      console.log(`[${agentName}] 완전히 다른 응답으로 재작성 완료`);
+    }
+    
+    // 설정값 필터링과 응답 후처리를 순차적으로 적용
+    assistantMessage = filterResponseContent(assistantMessage);
+    assistantMessage = cleanupResponse(assistantMessage);
+    
+    // 최종 응답이 너무 짧거나 의미없는 경우 복구 (더 관대한 조건)
+    if (!assistantMessage || assistantMessage.trim().length < 5 || assistantMessage.trim() === '.' || assistantMessage.trim() === '') {
+      // @멘션 질문에는 fallback 바로 대신 재생성 시도
+      if (userMessage.includes('@')) {
+        console.log(`[${agentName}] @멘션 질문에 대한 비상 응답 처리`);
+        assistantMessage = `죄송합니다. 해당 질문에 대한 상세한 답변을 준비하고 있습니다. 잠시 뒤에 다시 시도해주세요.`;
+      } else {
+        const fallbackMessages = {
+          'ko': `안녕하세요! ${agentName}입니다. 무엇을 도와드릴까요?`,
+          'en': `Hello! I'm ${agentName}. How can I help you?`,
+          'zh': `您好！我是${agentName}。有什么可以帮您的吗？`,
+          'vi': `Xin chào! Tôi là ${agentName}. Tôi có thể giúp gì cho bạn?`,
+          'ja': `こんにちは！${agentName}です。何かお手伝いできることはありますか？`
+        };
+        assistantMessage = fallbackMessages[userLanguage as keyof typeof fallbackMessages] || fallbackMessages['ko'];
+      }
+    }
+    
+    return {
+      message: assistantMessage,
+      usedDocuments: availableDocuments.map(doc => doc.filename),
+    };
+  } catch (error) {
+    console.error("Chat response generation failed:", error);
+    console.error("Error details:", {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      apiKey: process.env.OPENAI_API_KEY ? 'SET' : 'NOT_SET'
+    });
+    
+    const catchErrorMessages = {
+      'ko': "죄송합니다. 현재 응답을 생성할 수 없습니다. 잠시 후 다시 시도해주세요.",
+      'en': "Sorry, I can't generate a response right now. Please try again in a moment.",
+      'zh': "抱歉，目前无法生成回复。请稍后重试。",
+      'vi': "Xin lỗi, hiện tại không thể tạo phản hồi. Vui lòng thử lại sau một lúc.",
+      'ja': "申し訳ありませんが、現在応答을 생成できません。しばらくしてからもう一度お試しください。"
+    };
+    
+    return {
+      message: catchErrorMessages[userLanguage as keyof typeof catchErrorMessages] || catchErrorMessages['ko'],
+      usedDocuments: [],
+    };
+  }
+}
+
+// 응답 콘텐츠 필터링 함수 (routes.ts의 filterBotResponse와 동일한 로직)
+function filterResponseContent(response: string): string {
+  if (!response || typeof response !== 'string') {
+    return response;
+  }
+
+  // 설정값이나 메타데이터가 포함된 패턴들을 매우 강력하게 필터링
+  const unwantedPatterns = [
+    // 마크다운 패턴 제거 (더 강화)
+    /\*\*[^*]*\*\*/g,  // **텍스트** 패턴 제거
+    /\*[^*]*\*/g,      // *텍스트* 패턴 제거
+    /\[[^\]]*\]/g,     // [텍스트] 패턴 제거
+    /__[^_]*__/g,      // __텍스트__ 패턴 제거
+    
+    // 판단/설정 관련 키워드 필터링 (도현 챗봇 문제 해결)
+    /\*\*같은\*\*/g,     // **같은** 패턴
+    /\*\*다른\*\*/g,     // **다른** 패턴  
+    /\*\*동의\*\*/g,     // **동의** 패턴
+    /\*\*반대\*\*/g,     // **반대** 패턴
+    /\*\*판단\*\*/g,     // **판단** 패턴
+    /\*\*생각\*\*/g,     // **생각** 패턴
+    /같은\s*생각/g,      // 같은 생각 패턴
+    /동일한\s*의견/g,    // 동일한 의견 패턴
+    
+    // 설정값 노출 관련 패턴들 (민지 챗봇 문제 해결)
+    /네 가치관.*$/gm,   // 가치관 관련 설정
+    /연구.*임상.*산업.*선호.*$/gm, // 연구/임상/산업 선호 설정
+    /.*선호를.*함께.*볼게.*$/gm,  // 설정값 확인 문구
+    /가치관과.*연구.*$/gm,        // 가치관과 연구 관련
+    
+    // 챗봇 설정 노출 방지 (준호 챗봇 문제 해결)
+    /.*설정.*같은.*$/gm,          // 설정 관련 언급
+    /.*Configuration.*$/gm,      // Configuration 설정
+    /.*config.*$/gm,             // config 관련
+    /.*parameter.*$/gm,          // parameter 관련
+    /.*variable.*$/gm,           // variable 관련
+    
+    // 대학 관련 설정값들
+    /- POSTECH.*$/gm,  // - POSTECH으로 시작하는 라인들
+    /- 전공.*$/gm,     // - 전공으로 시작하는 라인들
+    /- 취업.*$/gm,     // - 취업으로 시작하는 라인들
+    /- 좌우명.*$/gm,   // - 좌우명으로 시작하는 라인들
+    /시간 인사:.*$/gm, // 시간 인사 관련
+    /시스템.*$/gm,     // 시스템으로 시작하는 라인들
+    /관심 분야.*$/gm,  // 관심 분야 관련
+    /전공:.*$/gm,      // 전공: 으로 시작하는 라인들
+    /학과:.*$/gm,      // 학과: 으로 시작하는 라인들
+    /관심.*연구.*$/gm,  // 관심 연구 관련
+    /교육.*$/gm,       // 교육 관련 설정들
+    
+    // 영어 설정값들
+    /.*specialization.*$/gm, // specialization 관련
+    /.*major.*$/gm,    // major 관련
+    /.*specialty.*$/gm, // specialty 관련
+    /.*preference.*$/gm, // preference 관련
+    /.*domain.*$/gm,   // domain 관련
+    
+    // 메타 정보 필터링
+    /\[.*?\]/g,        // 대괄호로 감싸진 텍스트들
+    /Agent.*$/gm,      // Agent 관련
+    /Bot.*$/gm,        // Bot 관련
+    /Model.*$/gm,      // Model 관련
+    /Role.*$/gm,       // Role 관련
+    /Persona.*$/gm,    // Persona 관련
+    
+    // 중간에 끊어진 문장 패턴 (서연 챗봇 문제 해결)
+    /안녕하세요!\s*어떻게\s*지내고\s*있나요.*무슨\s*이야기.*나누고.*$/gm
+  ];
+
+  let filteredResponse = response;
+  
+  // 패턴별로 필터링
+  unwantedPatterns.forEach(pattern => {
+    filteredResponse = filteredResponse.replace(pattern, '');
+  });
+  
+  // 추가 정리 작업
+  filteredResponse = filteredResponse
+    .replace(/\n\s*\n/g, '\n')  // 여러 줄바꿈을 하나로 정리
+    .replace(/^\s+|\s+$/g, '')  // 앞뒤 공백 제거
+    .replace(/^[.\s]*$/gm, '')  // 점이나 공백만 있는 줄 제거
+    .trim();
+  
+  // 응답이 너무 짧거나 의미없는 경우 복구 시도
+  if (!filteredResponse || filteredResponse.length < 10) {
+    // 원본에서 의미있는 내용 추출 시도
+    const sentences = response.split(/[.!?]/);
+    for (const sentence of sentences) {
+      const cleanSentence = sentence.trim();
+      if (cleanSentence.length > 15 && 
+          !cleanSentence.includes('설정') && 
+          !cleanSentence.includes('가치관') &&
+          !cleanSentence.includes('선호') &&
+          !cleanSentence.includes('연구') &&
+          !cleanSentence.includes('임상') &&
+          !cleanSentence.includes('산업')) {
+        return cleanSentence + '.';
+      }
+    }
+    return "네, 무엇을 도와드릴까요?";
+  }
+  
+  return filteredResponse;
+}
+
+export async function extractTextFromContent(filePath: string, mimeType: string): Promise<string> {
+  try {
+    if (mimeType.includes('text/plain')) {
+      // Read text files with proper UTF-8 encoding
+      return fs.readFileSync(filePath, 'utf-8');
+    }
+    
+    if (mimeType.includes('application/vnd.openxmlformats-officedocument.wordprocessingml.document') || 
+        mimeType.includes('application/msword')) {
+      // Extract text from Word documents using mammoth with proper encoding
+      console.log('Extracting text from Word document:', filePath);
+      try {
+        const result = await mammoth.extractRawText({ 
+          path: filePath
+        });
+        
+        // Clean extracted text to remove any residual binary characters
+        let cleanText = result.value
+          .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '') // Remove control characters
+          .replace(/\uFFFD/g, '') // Remove replacement characters
+          .trim();
+        
+        console.log('Extracted text length:', cleanText.length);
+        console.log('First 200 characters:', cleanText.substring(0, 200));
+        
+        // Verify text is not corrupted
+        if (cleanText.includes('PK') || cleanText.includes('[Content_Types]') || 
+            cleanText.includes('word/document.xml') || cleanText.length < 10) {
+          console.warn('Extracted text appears corrupted, returning error message');
+          return '워드 문서 텍스트 추출에 실패했습니다. 원본 파일을 다운로드하여 확인해주세요.';
+        }
+        
+        return cleanText;
+      } catch (extractError) {
+        console.error('Mammoth extraction failed:', extractError);
+        return '워드 문서 텍스트 추출 중 오류가 발생했습니다. 원본 파일을 다운로드하여 확인해주세요.';
+      }
+    }
+    
+    if (mimeType.includes('application/pdf')) {
+      // Extract text from PDF files using pdf-parse
+      console.log('PDF file detected, extracting text:', filePath);
+      try {
+        // Check if file exists and is readable first
+        console.log('Checking PDF file path:', filePath);
+        console.log('File exists check:', fs.existsSync(filePath));
+        console.log('Current working directory:', process.cwd());
+        
+        if (!fs.existsSync(filePath)) {
+          console.error('PDF file does not exist:', filePath);
+          const path = require('path');
+          const dir = path.dirname(filePath);
+          if (fs.existsSync(dir)) {
+            console.log('Directory contents:', fs.readdirSync(dir));
+          } else {
+            console.log('Directory does not exist:', dir);
+          }
+          return 'PDF 파일을 찾을 수 없습니다. 파일 경로를 확인해주세요.';
+        }
+        
+        const fileStats = fs.statSync(filePath);
+        console.log('PDF file size:', fileStats.size);
+        
+        if (fileStats.size === 0) {
+          console.error('PDF file is empty');
+          return 'PDF 파일이 비어있습니다.';
+        }
+        
+        // Read file as buffer
+        const dataBuffer = fs.readFileSync(filePath);
+        console.log('PDF buffer read successfully, size:', dataBuffer.length);
+        
+        // Check if buffer starts with PDF header
+        const pdfHeader = dataBuffer.subarray(0, 4).toString();
+        console.log('PDF header check:', pdfHeader);
+        
+        if (!pdfHeader.includes('%PDF')) {
+          console.error('File does not appear to be a valid PDF');
+          return 'PDF 파일 형식이 올바르지 않습니다. 파일이 손상되었거나 PDF가 아닐 수 있습니다.';
+        }
+        
+        // For now, provide basic PDF information instead of attempting text extraction
+        // This avoids the module path issues with pdf-parse
+        const fileName = path.basename(filePath);
+        const fileSizeKB = Math.round(dataBuffer.length / 1024);
+        const fileDate = new Date().toLocaleDateString('ko-KR');
+        
+        console.log(`PDF file processed: ${fileName}, size: ${fileSizeKB}KB`);
+        
+        return `📄 PDF 문서 업로드 완료
+파일명: ${fileName}
+파일 크기: ${fileSizeKB}KB
+업로드 일시: ${fileDate}
+
+이 PDF 문서가 업로드되었습니다. 문서에 대한 질문이나 내용에 대해 궁금한 점이 있으시면 언제든지 말씀해 주세요.
+
+참고: 현재 PDF 텍스트 자동 추출 기능은 시스템 제한으로 인해 임시적으로 비활성화되어 있습니다. 문서의 구체적인 내용에 대해 질문해 주시면 도움을 드릴 수 있습니다.`;
+      } catch (pdfError) {
+        console.error('PDF extraction failed:', pdfError);
+        console.error('Error stack:', pdfError instanceof Error ? pdfError.stack : undefined);
+        if (pdfError instanceof Error && pdfError.message?.includes('timeout')) {
+          return 'PDF 문서가 너무 큽니다. 텍스트 추출에 시간이 오래 걸려 중단되었습니다.';
+        }
+        if (pdfError instanceof Error && pdfError.message?.includes('ENOENT')) {
+          return 'PDF 파일 경로에 문제가 있습니다. 파일이 올바르게 업로드되었는지 확인해주세요.';
+        }
+        return `PDF 문서 텍스트 추출 중 오류가 발생했습니다: ${pdfError instanceof Error ? pdfError.message : '알 수 없는 오류'}`;
+      }
+    }
+    
+    // For other file types, try to read as UTF-8 text
+    try {
+      return fs.readFileSync(filePath, 'utf-8');
+    } catch (error) {
+      console.log('Could not read file as UTF-8, returning filename only');
+      return `파일: ${filePath.split('/').pop() || 'unknown'}`;
+    }
+    
+  } catch (error) {
+    console.error('Error extracting text from file:', error);
+    return `파일 텍스트 추출 실패: ${filePath.split('/').pop() || 'unknown'}`;
+  }
+}
+
+// 스트리밍 챗봇 응답 생성 함수
+export async function generateStreamingChatResponse(
+  userMessage: string,
+  agentName: string,
+  agentDescription: string,
+  conversationHistory: Array<{ role: "user" | "assistant"; content: string }>,
+  availableDocuments: Array<{ filename: string; content: string }> = [],
+  chatbotType: string = "general-llm",
+  speechStyle: string = "친근하고 도움이 되는 말투",
+  personality: string = "친절하고 전문적인 성격으로 정확한 정보를 제공",
+  additionalPrompt: string = "",
+  userLanguage: string = "ko",
+  onChunk: (chunk: string) => void, // 스트리밍 콜백
+  conversationId?: number
+): Promise<ChatResponse> {
+  try {
+    console.log("OpenAI streaming response for:", agentName);
+
+    // 기존 언어 처리 로직 재사용
+    if (userLanguage === "en" && containsKorean(userMessage)) {
+      userMessage = await translateKoreanToEnglish(userMessage);
+    }
+
+    if (userLanguage === "en") {
+      if (containsKorean(agentName)) {
+        agentName = await translateKoreanToEnglish(agentName);
+      }
+      if (containsKorean(agentDescription)) {
+        agentDescription = await translateKoreanToEnglish(agentDescription);
+      }
+      if (containsKorean(speechStyle)) {
+        speechStyle = await translateKoreanToEnglish(speechStyle);
+      }
+      if (containsKorean(personality)) {
+        personality = await translateKoreanToEnglish(personality);
+      }
+    }
+
+    // 문서 컨텍스트 준비
+    let documentContext = "";
+    if (availableDocuments.length > 0) {
+      if (userLanguage === "en") {
+        const translatedDocs = [];
+        for (const doc of availableDocuments) {
+          let translatedContent = doc.content;
+          if (containsKorean(doc.content)) {
+            translatedContent = await translateKoreanToEnglish(doc.content);
+          }
+          translatedDocs.push({
+            filename: doc.filename,
+            content: translatedContent
+          });
+        }
+        documentContext = `\n\nReference Documents:\n${translatedDocs.map(doc => 
+          `[Document: ${doc.filename}]\n${doc.content}`
+        ).join('\n\n')}`;
+      } else {
+        documentContext = `\n\n참고 문서:\n${availableDocuments.map(doc => 
+          `[문서명: ${doc.filename}]\n${doc.content}`
+        ).join('\n\n')}`;
+      }
+    }
+
+    const hasDocumentQuestion = userMessage.includes("문서") || userMessage.includes("내용") || 
+                               userMessage.includes("세계관") || userMessage.includes("파일") ||
+                               availableDocuments.some(doc => 
+                                 userMessage.includes(doc.filename.replace('.docx', '').replace('.pdf', ''))
+                               );
+
+    const languageInstructions = {
+      'ko': '한국어로 응답하세요.',
+      'en': 'Respond in English.',
+      'zh': '请用中文回复。',
+      'vi': 'Hãy trả lời bằng tiếng Việt.',
+      'ja': '日本語で応答してください。'
+    };
+    
+    const responseLanguage = languageInstructions[userLanguage as keyof typeof languageInstructions] || languageInstructions['ko'];
+    
+    let agentType: 'warm' | 'professional' | 'casual' | 'analytical' = 'professional';
+    
+    if (speechStyle.includes("친근") || speechStyle.includes("따뜻") || speechStyle.includes("친숙") || 
+        personality.includes("친근") || personality.includes("따뜻")) {
+      agentType = 'warm';
+    } else if (speechStyle.includes("캐주얼") || speechStyle.includes("편안") || speechStyle.includes("자유") ||
+               personality.includes("캐주얼") || personality.includes("편안")) {
+      agentType = 'casual';
+    } else if (speechStyle.includes("분석") || speechStyle.includes("논리") || speechStyle.includes("체계") ||
+               personality.includes("분석") || personality.includes("논리")) {
+      agentType = 'analytical';
+    }
+
+    const recentResponses = conversationHistory
+      .filter(msg => msg.role === 'assistant')
+      .slice(-3)
+      .map(msg => msg.content);
+
+    const conversationCount = conversationHistory.length;
+    const agentSeed = agentName.charCodeAt(0) + agentName.length + (Date.now() % 1000);
+    
+    const systemPrompt = buildDynamicSystemPrompt(
+      agentName,
+      agentDescription,
+      speechStyle,
+      personality,
+      additionalPrompt,
+      agentType,
+      conversationCount,
+      agentSeed
+    );
+
+    const languageInstruction = `응답은 반드시 ${responseLanguage}`;
+    
+    // 시스템 프롬프트 구성
+    let finalSystemPrompt = `${languageInstruction}
+
+${systemPrompt}
+
+## 스트리밍 응답 지침:
+- 자연스럽고 완전한 문장으로 응답하세요
+- 중간에 끊어지지 않도록 완전한 응답을 생성하세요
+
+CRITICAL FORMATTING RULES - ABSOLUTELY NO EXCEPTIONS:
+- NEVER use ANY markdown formatting: **bold**, *italic*, __underline__, ## headers, [links], backticks
+- NEVER use judgment keywords like "**같은**", "**다른**", "**동의**", "**반대**"
+- NEVER show internal decision-making processes or configuration values
+- Respond ONLY with natural conversational Korean text, no formatting symbols whatsoever
+- Speak as if you're having a normal conversation - no special formatting needed${documentContext}`;
+
+    const messages = [
+      { role: "system" as const, content: finalSystemPrompt },
+      ...conversationHistory,
+      { role: "user" as const, content: userMessage }
+    ];
+
+    const maxTokens = hasDocumentQuestion ? 1200 : 800;
+    
+    // 스트리밍 응답 생성
+    const stream = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages,
+      max_tokens: maxTokens,
+      temperature: 0.85 + (agentSeed % 100) / 1000,
+      seed: agentSeed,
+      stream: true
+    });
+
+    let fullResponse = "";
+    
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || "";
+      if (content) {
+        fullResponse += content;
+        onChunk(content); // 스트리밍 콜백 호출
+      }
+    }
+
+    // 응답 완성도 검사
+    const errorMessages = {
+      'ko': "죄송합니다. 응답을 생성할 수 없습니다.",
+      'en': "Sorry, I couldn't generate a response.",
+      'zh': "抱歉，无法生成回复。",
+      'vi': "Xin lỗi, không thể tạo phản hồi.",
+      'ja': "申し訳ありませんが、応답を生成できませんでした。"
+    };
+    
+    let assistantMessage = fullResponse || errorMessages[userLanguage as keyof typeof errorMessages] || errorMessages['ko'];
+    
+    // 기관명 자동 교정 적용 (스트리밍)
+    assistantMessage = correctInstitutionNames(assistantMessage);
+    
+    // @멘션 질문의 경우 더 높은 기준 적용 (스트리밍)
+    const isMentionQuestion = userMessage.includes('@');
+    const minLength = isMentionQuestion ? 120 : 80; // @멘션의 경우 120자, 일반 80자 이상
+    
+    // 이상한 단어/어미 패턴 감지 강화
+    const hasStrangeWords = assistantMessage.match(/(첫실|메러치|리스크실|시안실|업실|작실|험실|전실|구실|절실|개실|설실|체실|급실|정실|용실|조실|획실|뽐실|실험실을|실을|실이|실에|실의)/g);
+    const hasStrangeEndings = assistantMessage.match(/(기를보아요|나기도요|거예아야|아에오|보아요|도요|예아야|들어보셔요|풀어보셔요|찾아보셔요|나다이|니다아|에요아|죠아|네요아|습니다아|나기|도기|예아|러치|보오|셔요오|다이아|습니다오|리스크을|메러치을)/g);
+    
+    // 완결성 가드 체크 (스트리밍) (자연스러운 완성도만 확인)
+    const hasCompletenessGuard = checkCompletenessGuard(assistantMessage);
+    
+    // 응답 완성도 검사 (매우 완화된 버전 - 명백한 오류만)
+    const isIncompleteResponse = 
+      assistantMessage.trim().length < 30 || // 너무 짧은 응답만 (30자 미만)
+      !hasCompletenessGuard || // 명백히 미완성인 응답만
+      hasStrangeWords || hasStrangeEndings || // 이상한 단어/어미 패턴 감지
+      assistantMessage.match(/(활용해조|설계조|개발해조|연구해조|도움해조|따른조|하는데에|이에요요|니다다)$/m);
+
+    if (isIncompleteResponse) {
+      if (hasStrangeWords) {
+        console.log(`[${agentName}] 이상한 단어 감지, 응답 재생성: ${hasStrangeWords.join(', ')}`);
+      }
+      if (hasStrangeEndings) {
+        console.log(`[${agentName}] 이상한 어미 감지, 응답 재생성: ${hasStrangeEndings.join(', ')}`);
+      }
+      if (!hasCompletenessGuard) {
+        console.log(`[${agentName}] 완결성 가드 미포함, 응답 재생성: 명백히 미완성된 응답`);
+      }
+      console.log(`[${agentName}] 스트리밍 응답 불완전 감지 (길이: ${assistantMessage.length}/${minLength}), 완전한 응답 재생성`);
+      // 스트리밍이 아닌 일반 응답으로 재생성
+      const retryResponse = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages,
+        max_tokens: maxTokens + 400,
+        temperature: 0.85 + (agentSeed % 100) / 1000,
+        seed: agentSeed + 1,
+      });
+      
+      const retryMessage = retryResponse.choices[0].message.content;
+      if (retryMessage && retryMessage.trim().length > assistantMessage.trim().length) {
+        assistantMessage = retryMessage;
+        // 추가 콘텐츠를 스트리밍으로 전송
+        const additionalContent = retryMessage.slice(fullResponse.length);
+        if (additionalContent) {
+          onChunk(additionalContent);
+        }
+      }
+    }
+
+    // 유사도 분석 및 재작성 (기존 로직 재사용)
+    const similarityAnalysis = analyzeResponseSimilarity(assistantMessage, recentResponses);
+    console.log(`[${agentName}] 스트리밍 응답 유사도: ${similarityAnalysis.similarity.toFixed(2)}, 패턴: ${similarityAnalysis.patterns.length}개`);
+    
+    if (similarityAnalysis.needsRewrite || similarityAnalysis.similarity > 0.95) {
+      console.log(`[${agentName}] 스트리밍 응답 획일적 패턴 감지, 재작성 실행:`, similarityAnalysis.patterns);
+      
+      assistantMessage = generateAlternativeResponse(
+        assistantMessage,
+        similarityAnalysis.patterns,
+        agentName,
+        agentType,
+        agentSeed
+      );
+      console.log(`[${agentName}] 스트리밍 응답 재작성 완료`);
+    }
+
+    // 강력한 필터링 적용 (로컬 함수 사용)
+    assistantMessage = filterResponseContent(assistantMessage);
+    
+    // 최종 응답이 너무 짧거나 의미없는 경우 복구 (더 관대한 조건)
+    if (!assistantMessage || assistantMessage.trim().length < 5 || assistantMessage.trim() === '.' || assistantMessage.trim() === '') {
+      // @멘션 질문에는 fallback 바로 대신 재생성 시도
+      if (userMessage.includes('@')) {
+        console.log(`[${agentName}] @멘션 질문에 대한 비상 응답 처리`);
+        assistantMessage = `죄송합니다. 해당 질문에 대한 상세한 답변을 준비하고 있습니다. 잠시 뒤에 다시 시도해주세요.`;
+      } else {
+        const fallbackMessages = {
+          'ko': `안녕하세요! ${agentName}입니다. 무엇을 도와드릴까요?`,
+          'en': `Hello! I'm ${agentName}. How can I help you?`,
+          'zh': `您好！我是${agentName}。有什么可以帮您的吗？`,
+          'vi': `Xin chào! Tôi là ${agentName}. Tôi có thể giúp gì cho bạn?`,
+          'ja': `こんにちは！${agentName}です。何かお手伝いできることはありますか？`
+        };
+        assistantMessage = fallbackMessages[userLanguage as keyof typeof fallbackMessages] || fallbackMessages['ko'];
+      }
+    }
+
+    return {
+      message: cleanupResponse(assistantMessage),
+      usedDocuments: availableDocuments.map(doc => doc.filename),
+    };
+  } catch (error) {
+    console.error("Error generating streaming response:", error);
+    const errorMessages = {
+      'ko': "죄송합니다. 응답을 생성할 수 없습니다.",
+      'en': "Sorry, I couldn't generate a response.",
+      'zh': "抱歉，无法生成回复。",
+      'vi': "Xin lỗi, không thể tạo phản hồi.",
+      'ja': "申し訳ありませんが、応답を生成できませんでした。"
+    };
+    const errorMessage = errorMessages[userLanguage as keyof typeof errorMessages] || errorMessages['ko'];
+    return {
+      message: errorMessage,
+      usedDocuments: []
+    };
+  }
+}

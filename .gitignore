@@ -1,0 +1,70 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+server/public
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env*
+
+# Large asset folders (exclude from repo)
+uploads/
+attached_assets/
+backups/
+data/
+database-migration/
+migrations/
+
+# Scripts and one-time utilities
+scripts/
+
+# Data files
+*.xlsx
+*.csv
+*.sql
+*.json.backup
+*.tar.gz
+*.tgz
+*.zip
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.swp
+*.swo
+*~
+tmp/
+.cache/
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Replit specific
+.replit
+.upm/
+.local/
+
+# Vite
+vite.config.ts.*
+
+# Coverage
+coverage/
+
+# SQLite/DB files
+*.sqlite
+*.db

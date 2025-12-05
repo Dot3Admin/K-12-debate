@@ -1,0 +1,37 @@
+{
+  "general": {
+    "unknown": "An unknown error occurred.",
+    "network": "A network error occurred.",
+    "timeout": "Request timed out.",
+    "unauthorized": "Unauthorized access.",
+    "forbidden": "Access forbidden.",
+    "notFound": "The requested resource was not found.",
+    "serverError": "A server error occurred.",
+    "alreadyExists": "Already exists",
+    "agentUnauthorized": "You do not have permission to manage this agent."
+  },
+  "validation": {
+    "required": "This field is required.",
+    "invalidFormat": "Invalid format.",
+    "tooShort": "Too short.",
+    "tooLong": "Too long.",
+    "invalidEmail": "Invalid email format.",
+    "invalidPassword": "Invalid password."
+  },
+  "file": {
+    "tooLarge": "File size is too large.",
+    "invalidType": "Unsupported file type.",
+    "uploadFailed": "Failed to upload file.",
+    "downloadFailed": "Failed to download file.",
+    "deleteFailed": "Failed to delete file."
+  },
+  "auth": {
+    "loginRequired": "Login required.",
+    "sessionExpired": "Session expired.",
+    "invalidCredentials": "Invalid login credentials.",
+    "accountLocked": "Account is locked.",
+    "accountDisabled": "Account is disabled."
+  },
+  "updateFailed": "Update Failed",
+  "languageUpdateFailed": "Failed to update language settings."
+}

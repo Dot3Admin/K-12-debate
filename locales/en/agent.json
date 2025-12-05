@@ -1,0 +1,75 @@
+{
+  "list": {
+    "title": "Agent List",
+    "search": "Search Agents",
+    "searchPlaceholder": "Search by agent name or description",
+    "noAgents": "No agents available.",
+    "noResults": "No search results found."
+  },
+  "category": {
+    "school": "School",
+    "professor": "Professor",
+    "student": "Student",
+    "group": "Group",
+    "feature": "Feature"
+  },
+  "info": {
+    "name": "Name",
+    "description": "Description",
+    "type": "Type",
+    "manager": "Manager",
+    "organization": "Organization",
+    "documents": "Documents",
+    "users": "Users",
+    "status": "Status",
+    "settings": "Settings"
+  },
+  "action": {
+    "create": "Create Agent",
+    "edit": "Edit Agent",
+    "delete": "Delete Agent",
+    "deleteConfirm": "Are you sure you want to delete this agent?",
+    "deleteSuccess": "Agent has been deleted.",
+    "deleteFailed": "Failed to delete agent."
+  },
+  "persona": {
+    "title": "Edit Persona",
+    "description": "Configure the agent's personality and response style.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saveSuccess": "Persona has been saved.",
+    "saveFailed": "Failed to save persona."
+  },
+  "settings": {
+    "title": "Model & Response Settings",
+    "llmModel": "LLM Model",
+    "chatbotType": "Chatbot Type",
+    "visibility": "Visibility",
+    "webSearch": "Web Search",
+    "saveSuccess": "Settings have been saved.",
+    "saveFailed": "Failed to save settings."
+  },
+  "icon": {
+    "title": "Change Icon",
+    "default": "Default Icons",
+    "upload": "Upload Image",
+    "select": "Select Icon",
+    "changeSuccess": "Icon has been changed.",
+    "changeFailed": "Failed to change icon."
+  },
+  "file": {
+    "title": "File List",
+    "upload": "Upload Files",
+    "uploadSuccess": "Files have been uploaded.",
+    "uploadFailed": "Failed to upload files.",
+    "delete": "Delete File",
+    "deleteSuccess": "File has been deleted.",
+    "deleteFailed": "Failed to delete file.",
+    "noFiles": "No files available."
+  },
+  "chat": "chat",
+  "management": "management",
+  "functionsSelect": "Function Selection",
+  "managementMode": "Management Mode",
+  "generalChat": "General Chat"
+}

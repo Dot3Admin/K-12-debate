@@ -1,0 +1,37 @@
+{
+  "general": {
+    "unknown": "不明なエラーが発生しました。",
+    "network": "ネットワークエラーが発生しました。",
+    "timeout": "リクエストがタイムアウトしました。",
+    "unauthorized": "権限がありません。",
+    "forbidden": "アクセスが禁止されています。",
+    "notFound": "要求されたリソースが見つかりません。",
+    "serverError": "サーバーエラーが発生しました。",
+    "alreadyExists": "既に存在します",
+    "agentUnauthorized": "このエージェントを管理する権限がありません。"
+  },
+  "validation": {
+    "required": "必須項目です。",
+    "invalidFormat": "形式が正しくありません。",
+    "tooShort": "短すぎます。",
+    "tooLong": "長すぎます。",
+    "invalidEmail": "メールアドレスの形式が正しくありません。",
+    "invalidPassword": "パスワードが正しくありません。"
+  },
+  "file": {
+    "tooLarge": "ファイルサイズが大きすぎます。",
+    "invalidType": "サポートされていないファイル形式です。",
+    "uploadFailed": "ファイルのアップロードに失敗しました。",
+    "downloadFailed": "ファイルのダウンロードに失敗しました。",
+    "deleteFailed": "ファイルの削除に失敗しました。"
+  },
+  "auth": {
+    "loginRequired": "ログインが必要です。",
+    "sessionExpired": "セッションが期限切れです。",
+    "invalidCredentials": "ログイン情報が正しくありません。",
+    "accountLocked": "アカウントがロックされています。",
+    "accountDisabled": "アカウントが無効化されています。"
+  },
+  "updateFailed": "更新に失敗しました",
+  "languageUpdateFailed": "言語設定の更新に失敗しました."
+}

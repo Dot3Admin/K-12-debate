@@ -1,0 +1,66 @@
+{
+  "button": {
+    "save": "保存",
+    "cancel": "キャンセル",
+    "close": "閉じる",
+    "confirm": "確認",
+    "delete": "削除",
+    "edit": "編集",
+    "back": "戻る",
+    "next": "次へ",
+    "submit": "送信",
+    "upload": "アップロード",
+    "download": "ダウンロード",
+    "search": "検索",
+    "filter": "フィルター",
+    "refresh": "更新",
+    "create": "作成",
+    "add": "追加",
+    "remove": "削除",
+    "send": "送信",
+    "apply": "適用",
+    "reset": "リセット"
+  },
+  "status": {
+    "active": "有効",
+    "inactive": "無効",
+    "pending": "保留中",
+    "locked": "ロック",
+    "loading": "読み込み中...",
+    "saving": "保存中...",
+    "uploading": "アップロード中...",
+    "processing": "処理中...",
+    "success": "成功",
+    "failed": "失敗",
+    "completed": "完了"
+  },
+  "time": {
+    "today": "今日",
+    "yesterday": "昨日",
+    "recent": "最近",
+    "ago": "前",
+    "justNow": "たった今"
+  },
+  "unit": {
+    "count": "{{count}}件",
+    "items": "項目",
+    "files": "ファイル",
+    "pages": "ページ"
+  },
+  "navigation": {
+    "home": "ホーム",
+    "back": "戻る",
+    "forward": "進む",
+    "menu": "メニュー",
+    "settings": "設定"
+  },
+  "optional": "オプション",
+  "count": "個",
+  "people": "名",
+  "checking": "確認中...",
+  "creating": "作成中...",
+  "invite": "招待",
+  "retry": "再入力",
+  "added": "さんを招待リストに追加しました。",
+  "all": "全て"
+}
